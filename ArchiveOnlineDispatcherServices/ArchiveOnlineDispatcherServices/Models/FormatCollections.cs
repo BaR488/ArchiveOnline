@@ -16,7 +16,7 @@ namespace ArchiveOnlineDispatcherServices.Models
             MySqlCommand command = new MySqlCommand();
             string SQL = "select ArchiveOnline.format.NAME_FORMAT from ArchiveOnline.format, ArchiveOnline.server where ArchiveOnline.server.TYPE = @type and ArchiveOnline.server.FORMAT = ArchiveOnline.format.ID; ";
             command.CommandText = SQL;
-            command.Parameters.AddWithValue("@type", 0);
+            command.Parameters.AddWithValue("@type", type);
             DataTable formatsDt = QuerieExecutor.ExecutQuerie(command);
             formats = new List<Format>();
             foreach (DataRow row in formatsDt.Rows)
