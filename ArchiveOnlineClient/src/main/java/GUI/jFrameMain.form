@@ -92,7 +92,7 @@
           </Group>
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace min="-2" pref="105" max="-2" attributes="0"/>
-              <Component id="jLabel4" min="-2" max="-2" attributes="0"/>
+              <Component id="jLabeChooseAction" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="32767" attributes="0"/>
           </Group>
       </Group>
@@ -114,7 +114,7 @@
               <EmptySpace max="-2" attributes="0"/>
               <Component id="jSeparator1" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="jLabel4" min="-2" max="-2" attributes="0"/>
+              <Component id="jLabeChooseAction" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" attributes="0">
@@ -172,9 +172,10 @@
     </Component>
     <Component class="javax.swing.JSeparator" name="jSeparator1">
     </Component>
-    <Component class="javax.swing.JLabel" name="jLabel4">
+    <Component class="javax.swing.JLabel" name="jLabeChooseAction">
       <Properties>
         <Property name="text" type="java.lang.String" value="&#x412;&#x44b;&#x431;&#x435;&#x440;&#x438;&#x442;&#x435; &#x436;&#x435;&#x43b;&#x430;&#x435;&#x43c;&#x43e;&#x435; &#x434;&#x435;&#x439;&#x441;&#x442;&#x432;&#x438;&#x435;"/>
+        <Property name="enabled" type="boolean" value="false"/>
       </Properties>
     </Component>
     <Component class="javax.swing.JRadioButton" name="jRadioButtonArchive">
@@ -183,6 +184,7 @@
           <ComponentRef name="ActionsGroup"/>
         </Property>
         <Property name="text" type="java.lang.String" value="&#x410;&#x440;&#x445;&#x438;&#x432;&#x438;&#x440;&#x43e;&#x432;&#x430;&#x446;&#x438;&#x44f;"/>
+        <Property name="enabled" type="boolean" value="false"/>
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jRadioButtonArchiveActionPerformed"/>
@@ -194,6 +196,7 @@
           <ComponentRef name="ActionsGroup"/>
         </Property>
         <Property name="text" type="java.lang.String" value="&#x420;&#x430;&#x437;&#x430;&#x440;&#x445;&#x438;&#x432;&#x438;&#x440;&#x43e;&#x432;&#x430;&#x442;&#x44c;"/>
+        <Property name="enabled" type="boolean" value="false"/>
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jRadioButtonUnArchiveActionPerformed"/>
@@ -207,9 +210,7 @@
     <Component class="javax.swing.JLabel" name="jLabelArchiveMethod">
       <Properties>
         <Property name="text" type="java.lang.String" value="&#x421;&#x43f;&#x43e;&#x441;&#x43e;&#x431; &#x441;&#x436;&#x430;&#x442;&#x438;&#x44f;"/>
-        <Property name="enabled" type="boolean" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
-          <Connection code="jRadioButtonArchive.isSelected()" type="code"/>
-        </Property>
+        <Property name="enabled" type="boolean" value="false"/>
       </Properties>
     </Component>
     <Component class="javax.swing.JComboBox" name="jComboBoxArchiveMethod">

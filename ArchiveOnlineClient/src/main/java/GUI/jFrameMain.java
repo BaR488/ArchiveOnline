@@ -1,10 +1,17 @@
 package GUI;
 
+import DispatcherServices.GetServersService;
 import DispatcherServices.RESTService;
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.ComboBoxModel;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.ws.rs.core.MultivaluedHashMap;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -21,11 +28,20 @@ import org.json.simple.parser.ParseException;
  */
 public class jFrameMain extends javax.swing.JFrame {
 
+    private JFileChooser fileChooser;
+
+    private String getServersServiceUrl = "http://localhost:50713";
+    private GetServersService getServersService;
+
     /**
      * Creates new form jFrameMain
      */
     public jFrameMain() {
+
         initComponents();
+        fileChooser = new JFileChooser();
+        getServersService = new GetServersService(getServersServiceUrl);
+
     }
 
     /**
@@ -43,7 +59,7 @@ public class jFrameMain extends javax.swing.JFrame {
         jLabel2 = new javax.swing.JLabel();
         jButtonLoadFile = new javax.swing.JButton();
         jSeparator1 = new javax.swing.JSeparator();
-        jLabel4 = new javax.swing.JLabel();
+        jLabeChooseAction = new javax.swing.JLabel();
         jRadioButtonArchive = new javax.swing.JRadioButton();
         jRadioButtonUnArchive = new javax.swing.JRadioButton();
         jSeparator2 = new javax.swing.JSeparator();
@@ -70,10 +86,12 @@ public class jFrameMain extends javax.swing.JFrame {
             }
         });
 
-        jLabel4.setText("Выберите желаемое действие");
+        jLabeChooseAction.setText("Выберите желаемое действие");
+        jLabeChooseAction.setEnabled(false);
 
         ActionsGroup.add(jRadioButtonArchive);
         jRadioButtonArchive.setText("Архивировация");
+        jRadioButtonArchive.setEnabled(false);
         jRadioButtonArchive.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jRadioButtonArchiveActionPerformed(evt);
@@ -82,6 +100,7 @@ public class jFrameMain extends javax.swing.JFrame {
 
         ActionsGroup.add(jRadioButtonUnArchive);
         jRadioButtonUnArchive.setText("Разархивировать");
+        jRadioButtonUnArchive.setEnabled(false);
         jRadioButtonUnArchive.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jRadioButtonUnArchiveActionPerformed(evt);
@@ -91,7 +110,7 @@ public class jFrameMain extends javax.swing.JFrame {
         jSeparator2.setOrientation(javax.swing.SwingConstants.VERTICAL);
 
         jLabelArchiveMethod.setText("Способ сжатия");
-        jLabelArchiveMethod.setEnabled(jRadioButtonArchive.isSelected());
+        jLabelArchiveMethod.setEnabled(false);
 
         jComboBoxArchiveMethod.setEnabled(jRadioButtonArchive.isSelected());
 
@@ -161,7 +180,7 @@ public class jFrameMain extends javax.swing.JFrame {
                         .addComponent(jButtonUnArchive))))
             .addGroup(layout.createSequentialGroup()
                 .addGap(105, 105, 105)
-                .addComponent(jLabel4)
+                .addComponent(jLabeChooseAction)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -179,7 +198,7 @@ public class jFrameMain extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel4)
+                .addComponent(jLabeChooseAction)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
@@ -207,34 +226,42 @@ public class jFrameMain extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    //Create a file chooser
-    final JFileChooser fileChooser = new JFileChooser();
-
-    String getServersServiceUrl = "http://localhost:50713";
 
     private void jRadioButtonArchiveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonArchiveActionPerformed
+
+        //Включаем/выключаем контролы
         enableArchivate(jRadioButtonArchive.isSelected());
         enableUnArchivate(jRadioButtonUnArchive.isSelected());
 
+        //Загружаем доступные методы сжатия
         if (jRadioButtonArchive.isSelected()) {
             try {
-                RESTService service = new RESTService(getServersServiceUrl);
-                MultivaluedHashMap map = new MultivaluedHashMap();
-                map.add("type", "1");
-                JSONArray jsonArray = service.getResponse("/api/servers", map);
-                for (Object a : jsonArray.toArray()) {
-                    JSONObject jsonObj = (JSONObject) a;
-                    jComboBoxArchiveMethod.addItem((jsonObj.get("Name").toString()));
-                }
-            } catch (ParseException ex) {
+                loadItems(jComboBoxArchiveMethod, getServersService.getArchiveMethods());
+            } catch (Exception ex) {
                 Logger.getLogger(jFrameMain.class.getName()).log(Level.SEVERE, null, ex);
+                JOptionPane.showMessageDialog(this, "Удаленный сервер в данны момент не доступен, повторите попытку позднее.",
+                        "Ошибка", JOptionPane.ERROR_MESSAGE);
             }
         }
     }//GEN-LAST:event_jRadioButtonArchiveActionPerformed
 
     private void jRadioButtonUnArchiveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonUnArchiveActionPerformed
+
+        //Включаем/выключаем контролы
         enableUnArchivate(jRadioButtonUnArchive.isSelected());
         enableArchivate(jRadioButtonArchive.isSelected());
+
+        //Загружаем доступные методы расжатия
+        if (jRadioButtonUnArchive.isSelected()) {
+            try {
+                loadItems(jComboBoxUnArchiveMethod, getServersService.getUnArchiveMethods());
+            } catch (Exception ex) {
+                Logger.getLogger(jFrameMain.class.getName()).log(Level.SEVERE, null, ex);
+                JOptionPane.showMessageDialog(this, "Удаленный сервер в данны момент не доступен, повторите попытку позднее.",
+                        "Ошибка", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+
     }//GEN-LAST:event_jRadioButtonUnArchiveActionPerformed
 
     private void jButtonLoadFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonLoadFileActionPerformed
@@ -242,11 +269,26 @@ public class jFrameMain extends javax.swing.JFrame {
         //Показываем диалог открытия файла
         int returnValue = fileChooser.showOpenDialog(this);
 
+        //Если был выбран файл
         if (returnValue == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
             jTextFieldFilePath.setText(file.getAbsolutePath());
+            enableActions(true);
+        } else {
+            enableActions(false);
+            enableArchivate(false);
+            enableUnArchivate(false);
         }
     }//GEN-LAST:event_jButtonLoadFileActionPerformed
+
+    //Загружает элементы списка в комбобокс
+    private void loadItems(JComboBox<String> comboBox, ArrayList<String> items) {
+        comboBox.removeAllItems();
+        for (String methodName : items) {
+            comboBox.addItem(methodName);
+        }
+        comboBox.setSelectedIndex(-1);
+    }
 
     //Включает/выключает контролы архивации
     private void enableArchivate(boolean mode) {
@@ -255,11 +297,18 @@ public class jFrameMain extends javax.swing.JFrame {
         jLabelArchiveMethod.setEnabled(mode);
     }
 
-    //Включает выключает контролы разархивации
+    //Включает/выключает контролы разархивации
     private void enableUnArchivate(boolean mode) {
         jButtonUnArchive.setEnabled(mode);
         jComboBoxUnArchiveMethod.setEnabled(mode);
         jLabelUnArchiveMethod.setEnabled(mode);
+    }
+
+    //Включает/выключает контролы действий
+    private void enableActions(boolean mode) {
+        jLabeChooseAction.setEnabled(mode);
+        jRadioButtonArchive.setEnabled(mode);
+        jRadioButtonUnArchive.setEnabled(mode);
     }
 
     /**
@@ -304,9 +353,9 @@ public class jFrameMain extends javax.swing.JFrame {
     private javax.swing.JButton jButtonUnArchive;
     private javax.swing.JComboBox<String> jComboBoxArchiveMethod;
     private javax.swing.JComboBox<String> jComboBoxUnArchiveMethod;
+    private javax.swing.JLabel jLabeChooseAction;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabelArchiveMethod;
     private javax.swing.JLabel jLabelUnArchiveMethod;
     private javax.swing.JRadioButton jRadioButtonArchive;
