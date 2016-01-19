@@ -102,7 +102,7 @@ public class Archiver implements ArchiverOnline {
             RegisterServerService registerService = new RegisterServerService();
             registerService.register(type, format, threadCount, queueSize);
         } catch (Exception ex) {
-            Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
+           Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

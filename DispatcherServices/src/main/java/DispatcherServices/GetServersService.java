@@ -36,6 +36,7 @@ public class GetServersService extends RESTService {
             FileInputStream fileInputStream = new FileInputStream("src/main/resources/services.properties");
             properties.load(fileInputStream);
             init(properties.getProperty("getServersResource"));
+            fileInputStream.close();
         } catch (IOException ex) {
             Logger.getLogger(GetServersService.class.getName()).log(Level.SEVERE, null, ex);
         }
