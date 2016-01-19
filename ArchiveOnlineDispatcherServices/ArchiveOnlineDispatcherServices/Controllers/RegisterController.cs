@@ -18,7 +18,7 @@ namespace ArchiveOnlineDispatcherServices.Controllers
 
         [Route("api/register")]
         [HttpGet]
-        public object RegisterServer(int type, string format, int threadCount, int queueSize)
+        public List<Server> RegisterServer(int type, string format, int threadCount, int queueSize)
         {
             //Создаем новый объект типа сервер
             Server server = new Server(type, GetClientIp(Request), GetClientName(Request), format, threadCount, queueSize);
@@ -26,7 +26,7 @@ namespace ArchiveOnlineDispatcherServices.Controllers
             //Регистрируем его
             ServerCollection.registerServer(server);
 
-            return server;
+            return new List<Server>() { server };
         }
 
         //Возвращает IP адрес клиента
