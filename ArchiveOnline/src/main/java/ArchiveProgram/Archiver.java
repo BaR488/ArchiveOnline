@@ -6,8 +6,8 @@
 package ArchiveProgram;
 
 //import DispatcherServices.RegisterServerService;
+import ArchiverServices.RunningArchiver;
 import DispatcherServices.RegisterServerService;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,15 +18,44 @@ import java.util.logging.Logger;
  */
 public class Archiver implements ArchiverOnline {
 
+    //Класс - статус сервера - колво файлов в очереди, колво файлов в процессе
+    public static class ArchiverStatus {
+
+        private int filesInProgress;
+
+        public ArchiverStatus(int filesInQueue, int filesInProgress) {
+            this.filesInProgress = filesInQueue + filesInProgress;
+        }
+
+        /**
+         * @return the filesInProgress
+         */
+        public int getFilesInProgress() {
+            return filesInProgress;
+        }
+
+        /**
+         * @param filesInProgress the filesInProgress to set
+         */
+        public void setFilesInProgress(int filesInProgress) {
+            this.filesInProgress = filesInProgress;
+        }
+    }
+
     //Тип сервера сжиматель, расжматель
-    public enum ServerType { COMPRESSOR, DEPRESSOR }
+    public enum ServerType {
+        COMPRESSOR, DEPRESSOR
+    }
 
     private Integer type;
     private String format; //Формат сервера
     private Integer threadCount; //Количество одновременно работающих потоков
     private Integer queueSize; //Размер очереди
-    protected ArrayList<? extends ArchiverThread> runningThreads; //Запущенные потоки
-    protected ArrayList<File> filesInQueue; //Файлы в очереди
+
+    //protected ArrayList<? extends ArchiverThread> runningThreads; //Запущенные потоки
+    //protected ArrayList<File> filesInQueue; //Файлы в очереди
+    protected ArrayList<ArchiverThread> runningThreads; //Запущенные потоки
+    protected ArrayList<String> filesInQueue; //Файлы в очереди
 
     /**
      * @return the format
@@ -63,8 +92,10 @@ public class Archiver implements ArchiverOnline {
         this.runningThreads = new ArrayList<>();
         this.filesInQueue = new ArrayList<>();
         this.type = type.ordinal();
+        RunningArchiver.archiver = this;
     }
 
+    //Регистрация архиватора
     @Override
     public void register() {
         try {
@@ -73,6 +104,21 @@ public class Archiver implements ArchiverOnline {
         } catch (Exception ex) {
             Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    //Добавляет очередной файл на сжатие
+    @Override
+    public void addFile(String file) {
+        if (runningThreads.size() == threadCount) {
+            filesInQueue.add(file);
+        } else if (runningThreads.size() < threadCount) {
+            runningThreads.add(new ArchiverThread(file));
+        }
+    }
+
+    //Возвращает статус архиватора
+    public ArchiverStatus getStatus() {
+        return new ArchiverStatus(filesInQueue.size(), runningThreads.size());
     }
 
 }

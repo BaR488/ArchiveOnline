@@ -12,4 +12,5 @@ package ArchiveProgram;
  */
 public interface ArchiverOnline {
     public void register();
+    public void addFile(String file);
 }

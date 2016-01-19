@@ -11,18 +11,21 @@ import java.io.File;
  *
  * @author minel
  */
-public abstract class ArchiverThread implements Runnable {
+public class ArchiverThread implements Runnable {
 
-    private File file;
+    //private File file;
+    private String file;
+    
+    
 
     /**
      * @return the file
      */
-    public File getFile() {
+    public String getFile() {
         return file;
     }
 
-    public ArchiverThread(File file) {
+    public ArchiverThread(String file) {
         this.file = file;
     }
 
