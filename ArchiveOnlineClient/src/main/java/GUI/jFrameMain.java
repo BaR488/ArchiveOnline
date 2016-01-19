@@ -1,21 +1,13 @@
 package GUI;
 
 import DispatcherServices.GetServersService;
-import DispatcherServices.RESTService;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.ComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.ws.rs.core.MultivaluedHashMap;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -30,7 +22,6 @@ public class jFrameMain extends javax.swing.JFrame {
 
     private JFileChooser fileChooser;
 
-    private String getServersServiceUrl = "http://localhost:50713";
     private GetServersService getServersService;
 
     /**
@@ -40,7 +31,7 @@ public class jFrameMain extends javax.swing.JFrame {
 
         initComponents();
         fileChooser = new JFileChooser();
-        getServersService = new GetServersService(getServersServiceUrl);
+        getServersService = new GetServersService();
 
     }
 

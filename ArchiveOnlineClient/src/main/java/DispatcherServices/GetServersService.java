@@ -4,12 +4,14 @@
  * and open the template in the editor.
  */
 package DispatcherServices;
-
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.ws.rs.core.MultivaluedHashMap;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -22,15 +24,24 @@ import org.json.simple.parser.ParseException;
  */
 public class GetServersService extends RESTService {
 
-    //Константы способов сжатия
+    //Константы типа серверов
     private final static Integer ARCHIVE_TYPE = 0;
     private final static Integer UNARCHIVE_TYPE = 1;
 
-    //URL ресурса со списком форматов
-    private final static String GETSERVERS_RESOURCE = "api/servers";
+    public GetServersService(String serviceUrl) {  
+        super(serviceUrl);        
+    }
 
-    public GetServersService(String serviceUrl) {
-        super(serviceUrl);
+    public GetServersService(){
+        try {
+            Properties properties = new Properties();
+            FileInputStream fileInputStream = new FileInputStream("src/main/resources/services.properties");
+            properties.load(fileInputStream);
+            init(properties.getProperty("getServersResource"));
+        } catch (IOException ex) {
+            Logger.getLogger(GetServersService.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
     }
 
     //Возвращает массив доступных способов сжатия
@@ -54,7 +65,7 @@ public class GetServersService extends RESTService {
         paramsMap.putSingle("type", type.toString());
 
         //Обращаемся к сервису и получаем массив JSON
-        JSONArray jsonArray = getResponse(GETSERVERS_RESOURCE, paramsMap);
+        JSONArray jsonArray = getResponse(paramsMap);
 
         //Извлекаем имена способов
         jsonArray.forEach((jsonObj) -> {
