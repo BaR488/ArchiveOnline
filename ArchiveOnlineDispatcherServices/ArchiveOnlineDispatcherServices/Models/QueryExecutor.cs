@@ -18,9 +18,9 @@ namespace ArchiveOnlineDispatcherServices.Models
             mysqlCSB.Database = "ArchiveOnline";
             mysqlCSB.UserID = "root";
             mysqlCSB.Password = "CCrootpass";
-            mysqlCSB.Pooling = true;
-            mysqlCSB.MinimumPoolSize = 5;
-            mysqlCSB.MaximumPoolSize = 10;
+            //mysqlCSB.Pooling = true;
+            //mysqlCSB.MinimumPoolSize = 5;
+            //mysqlCSB.MaximumPoolSize = 10;
         }
 
         //Метод выполняет переданную SQL команду и возвращает результат
