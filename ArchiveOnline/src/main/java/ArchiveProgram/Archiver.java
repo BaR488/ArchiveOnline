@@ -47,7 +47,8 @@ public class Archiver implements ArchiverOnline {
         COMPRESSOR, DEPRESSOR
     }
 
-    private Integer type;
+    private Integer port; //Порт на котором запущен архиватор
+    private Integer type; //тип сжатие/расжатие
     private String format; //Формат сервера
     private Integer threadCount; //Количество одновременно работающих потоков
     private Integer queueSize; //Размер очереди
@@ -85,13 +86,21 @@ public class Archiver implements ArchiverOnline {
         return type;
     }
 
-    public Archiver(String format, Integer threadCount, Integer queueSize, ServerType type) {
+    /**
+     * @return the port
+     */
+    public Integer getPort() {
+        return port;
+    }
+
+    public Archiver(Integer port, String format, Integer threadCount, Integer queueSize, ServerType type) {
         this.format = format;
         this.threadCount = threadCount;
         this.queueSize = queueSize;
         this.runningThreads = new ArrayList<>();
         this.filesInQueue = new ArrayList<>();
         this.type = type.ordinal();
+        this.port=port;
         RunningArchiver.archiver = this;
     }
 
@@ -100,9 +109,9 @@ public class Archiver implements ArchiverOnline {
     public void register() {
         try {
             RegisterServerService registerService = new RegisterServerService();
-            registerService.register(type, format, threadCount, queueSize);
+            registerService.register(port, type, format, threadCount, queueSize);
         } catch (Exception ex) {
-           Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

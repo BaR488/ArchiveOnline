@@ -7,11 +7,12 @@ package DispatcherServices;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ws.rs.core.MultivaluedHashMap;
-import org.json.simple.JSONArray;
 import org.json.simple.parser.ParseException;
 
 /**
@@ -23,7 +24,7 @@ public class RegisterServerService extends RESTService {
     public RegisterServerService() {
         try {
             Properties properties = new Properties();
-            FileInputStream fileInputStream = new FileInputStream("src/main/resources/services.properties");
+            FileInputStream fileInputStream = new FileInputStream("../Properties/services.properties");
             properties.load(fileInputStream);
             init(properties.getProperty("registerResource"));
             fileInputStream.close();
@@ -31,20 +32,28 @@ public class RegisterServerService extends RESTService {
             Logger.getLogger(GetServersService.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    public void register(Integer type, String format, Integer threadCount, Integer queueSize) throws ParseException, RegistrationFailedException{
-        
+
+    public void register(Integer port, Integer type, String format, Integer threadCount, Integer queueSize) throws ParseException, RegistrationFailedException {
+
         //Создаем карту с параметрами
         MultivaluedHashMap paramsMap = new MultivaluedHashMap();
+        paramsMap.putSingle("port", port.toString());
         paramsMap.putSingle("type", type.toString());
         paramsMap.putSingle("format", format);
         paramsMap.putSingle("threadCount", threadCount.toString());
         paramsMap.putSingle("queueSize", queueSize.toString());
+
+        boolean isOk = doRequest(paramsMap);
         
-        JSONArray response = getResponse(paramsMap);
-        if (response.isEmpty()){
+        if (isOk) {  
+            SimpleDateFormat dt = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+            System.out.println(dt.format(new Date()) + " Сервер успешно зарегестрирован на главном сервере.");
+        } else {
+            SimpleDateFormat dt = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+            System.err.println(dt.format(new Date()) + " Ошибка во время регистации. Сервер не был зарегестрирован.");
             throw new RegistrationFailedException("Ошибка во время регистации. Сервер не был зарегестрирован.");
-        }       
+        }
+        
     }
-    
+
 }

@@ -1,6 +1,7 @@
 package GUI;
 
 import DispatcherServices.GetServersService;
+import com.sun.jersey.api.client.ClientHandlerException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -8,6 +9,7 @@ import java.util.logging.Logger;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -28,10 +30,18 @@ public class jFrameMain extends javax.swing.JFrame {
      * Creates new form jFrameMain
      */
     public jFrameMain() {
-
+        getServersService = new GetServersService();
+        try {
+            if (!getServersService.isAvailable()) {
+                JOptionPane.showMessageDialog(this, "Удаленный сервер в данный момент не доступен, повторите попытку позднее.",
+                        "Ошибка", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (ClientHandlerException ex) {
+            JOptionPane.showMessageDialog(this, "Удаленный сервер в данный момент не доступен, повторите попытку позднее.",
+                    "Ошибка", JOptionPane.ERROR_MESSAGE);
+        }
         initComponents();
         fileChooser = new JFileChooser();
-        getServersService = new GetServersService();
 
     }
 
@@ -230,7 +240,7 @@ public class jFrameMain extends javax.swing.JFrame {
                 loadItems(jComboBoxArchiveMethod, getServersService.getArchiveMethods());
             } catch (Exception ex) {
                 Logger.getLogger(jFrameMain.class.getName()).log(Level.SEVERE, null, ex);
-                JOptionPane.showMessageDialog(this, "Удаленный сервер в данны момент не доступен, повторите попытку позднее.",
+                JOptionPane.showMessageDialog(this, "Удаленный сервер в данный момент не доступен, повторите попытку позднее.",
                         "Ошибка", JOptionPane.ERROR_MESSAGE);
             }
         }
@@ -248,7 +258,7 @@ public class jFrameMain extends javax.swing.JFrame {
                 loadItems(jComboBoxUnArchiveMethod, getServersService.getUnArchiveMethods());
             } catch (Exception ex) {
                 Logger.getLogger(jFrameMain.class.getName()).log(Level.SEVERE, null, ex);
-                JOptionPane.showMessageDialog(this, "Удаленный сервер в данны момент не доступен, повторите попытку позднее.",
+                JOptionPane.showMessageDialog(this, "Удаленный сервер в данный момент не доступен, повторите попытку позднее.",
                         "Ошибка", JOptionPane.ERROR_MESSAGE);
             }
         }
@@ -266,9 +276,11 @@ public class jFrameMain extends javax.swing.JFrame {
             jTextFieldFilePath.setText(file.getAbsolutePath());
             enableActions(true);
         } else {
+            jTextFieldFilePath.setText("");
             enableActions(false);
             enableArchivate(false);
             enableUnArchivate(false);
+            ActionsGroup.clearSelection();
         }
     }//GEN-LAST:event_jButtonLoadFileActionPerformed
 

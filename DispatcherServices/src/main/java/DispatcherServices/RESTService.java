@@ -6,11 +6,14 @@
 package DispatcherServices;
 
 import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientHandlerException;
+import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.UriBuilder;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
@@ -40,7 +43,7 @@ public class RESTService {
     }
 
     //Возвращает Массив JSONов от указанного ресурса сервиса, с указанными параметрами
-    public JSONArray getResponse(String resourcePath, MultivaluedHashMap<String, String> params) throws ParseException {
+    public JSONArray getResponseArray(String resourcePath, MultivaluedHashMap<String, String> params) throws ParseException, ClientHandlerException {
 
         //Получаем ответ сервера в виде строки
         String serviceResponse = service.path(resourcePath).queryParams(params).accept(MediaType.APPLICATION_JSON).get(String.class);
@@ -54,7 +57,7 @@ public class RESTService {
     }
 
     //Возвращает Массив JSONов от указанного ресурса сервиса, с указанными параметрами
-    public JSONArray getResponse(MultivaluedHashMap<String, String> params) throws ParseException {
+    public JSONArray getResponseArray(MultivaluedHashMap<String, String> params) throws ParseException, ClientHandlerException {
 
         //Получаем ответ сервера в виде строки
         String serviceResponse = service.queryParams(params).accept(MediaType.APPLICATION_JSON).get(String.class);
@@ -66,4 +69,28 @@ public class RESTService {
         return (JSONArray) parser.parse(serviceResponse);
 
     }
+
+    //Возвращает объект JSON полученный серсиса
+    public JSONObject getResponseObjet(MultivaluedHashMap<String, String> params) throws ParseException, ClientHandlerException {
+
+        //Получаем ответ сервера в виде строки
+        String serviceResponse = service.queryParams(params).accept(MediaType.APPLICATION_JSON).get(String.class);
+
+        //Парсим из ответа JSON
+        JSONParser parser = new JSONParser();
+
+        //И возвращаем его
+        return (JSONObject) parser.parse(serviceResponse);
+
+    }
+
+    //Возвращает true если сервис вернул 200 OK
+    public boolean doRequest(MultivaluedHashMap<String, String> params) {
+
+        //Получаем ответ сервера
+        ClientResponse serviceResponse = service.queryParams(params).accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+
+        return serviceResponse.getStatusInfo().getStatusCode() == ClientResponse.Status.OK.getStatusCode();
+    }
+    
 }

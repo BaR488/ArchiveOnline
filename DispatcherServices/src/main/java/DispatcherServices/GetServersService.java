@@ -4,6 +4,8 @@
  * and open the template in the editor.
  */
 package DispatcherServices;
+
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,16 +28,16 @@ public class GetServersService extends RESTService {
     private final static Integer ARCHIVE_TYPE = 0;
     private final static Integer UNARCHIVE_TYPE = 1;
 
-    public GetServersService(String serviceUrl) {  
-        super(serviceUrl);        
+    public GetServersService(String serviceUrl) {
+        super(serviceUrl);
     }
 
-    public GetServersService(){
+    public GetServersService() {
         try {
             Properties properties = new Properties();
-            FileInputStream fileInputStream = new FileInputStream("src/main/resources/services.properties");
+            FileInputStream fileInputStream = new FileInputStream("../Properties/services.properties");
             properties.load(fileInputStream);
-            init(properties.getProperty("getServersResource"));
+            init(properties.getProperty("getFormatsResource"));
             fileInputStream.close();
         } catch (IOException ex) {
             Logger.getLogger(GetServersService.class.getName()).log(Level.SEVERE, null, ex);
@@ -64,7 +66,7 @@ public class GetServersService extends RESTService {
         paramsMap.putSingle("type", type.toString());
 
         //Обращаемся к сервису и получаем массив JSON
-        JSONArray jsonArray = getResponse(paramsMap);
+        JSONArray jsonArray = getResponseArray(paramsMap);
 
         //Извлекаем имена способов
         jsonArray.forEach((jsonObj) -> {
@@ -73,6 +75,16 @@ public class GetServersService extends RESTService {
 
         //Возвращаем результат
         return result;
+    }
+
+    public boolean isAvailable() {
+
+        //Создаем карту с параметрами
+        MultivaluedHashMap paramsMap = new MultivaluedHashMap();
+        paramsMap.putSingle("type", ARCHIVE_TYPE.toString());
+
+        return doRequest(paramsMap);
+
     }
 
 }

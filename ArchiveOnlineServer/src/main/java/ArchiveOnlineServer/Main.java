@@ -6,6 +6,7 @@
 package ArchiveOnlineServer;
 
 import ArchiveProgram.Archiver;
+import com.sun.jersey.api.client.ClientHandlerException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.jetty.server.Server;
@@ -20,30 +21,34 @@ import org.glassfish.jersey.servlet.ServletContainer;
  */
 public class Main {
 
+    private static int portNumber = 8084;
     private static Server jettyServer;
 
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        
-        //Создаем объект архиватор
-        Archiver archiver = new Archiver("rar4", 2, 10, Archiver.ServerType.DEPRESSOR);
 
-        //Регистрируем его
-        archiver.register();
-        
-        archiver.addFile("1");
-        archiver.addFile("1");
-        archiver.addFile("1");
-        archiver.addFile("1");
-        archiver.addFile("1");
-        archiver.addFile("1");
-        archiver.addFile("1");
-        archiver.addFile("1");
-        
-        //Запускаем сервер Jetty и севрисы
-        startJetty(8081);
+        try {
+            //Запускаем сервер Jetty и севрисы
+            startJetty(portNumber);
+
+            //Создаем объект архиватор
+            Archiver archiver = new Archiver(portNumber, "zipator", 10, 10, Archiver.ServerType.DEPRESSOR);
+
+            for (int i = 0; i < 2; i++) {
+                archiver.addFile("1");
+            }
+            
+            //Регистрируем его
+            archiver.register();
+
+            //Главный поток ожидает завершения Jetty
+            jettyServer.join();
+
+        } catch (Exception ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
     }
 
@@ -51,7 +56,7 @@ public class Main {
     private static void startJetty(int port) {
 
         jettyServer = new Server(port);
-        
+
         ResourceConfig config = new ResourceConfig();
         config.packages("ArchiverServices");
 
@@ -62,11 +67,10 @@ public class Main {
 
         try {
             jettyServer.start();
-            jettyServer.join();
-        } catch (Exception ex) {
+        }catch (Exception ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
             jettyServer.destroy();
         }
+        
     }
 }

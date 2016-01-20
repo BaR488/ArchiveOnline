@@ -18,15 +18,34 @@ namespace ArchiveOnlineDispatcherServices.Controllers
 
         [Route("api/register")]
         [HttpGet]
-        public List<Server> RegisterServer(int type, string format, int threadCount, int queueSize)
+        public HttpResponseMessage RegisterServer(uint port, uint type, string format, uint threadCount, uint queueSize)
         {
-            //Создаем новый объект типа сервер
-            Server server = new Server(type, GetClientIp(Request), GetClientName(Request), format, threadCount, queueSize);
-            
-            //Регистрируем его
-            ServerCollection.registerServer(server);
+            try
+            {
+                if (CheckRegisterParametrs(port, type, format, threadCount, queueSize))
+                {
+                    //Создаем новый объект типа сервер
+                    Server server = new Server(port, (Server.ServerType)type, GetClientIp(Request), format.ToLower(), threadCount, queueSize);
 
-            return new List<Server>() { server };
+                    //Регистрируем его
+                    ServerCollection.registerServer(server);
+
+                    //Возвращаем успех
+                    return Request.CreateResponse(HttpStatusCode.OK, server);
+
+                }
+                else
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Регистарция сервера невозможна. Неверные параметры сервера");
+                }
+                
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ex.Message);
+            }
+            
+
         }
 
         //Возвращает IP адрес клиента
@@ -49,25 +68,13 @@ namespace ArchiveOnlineDispatcherServices.Controllers
             return null;
         }
 
-        //Возвращает имя клиента
-        private string GetClientName(HttpRequestMessage request)
+        //Проверяет параметры регестрируемого сервера
+        public bool CheckRegisterParametrs(uint port, uint type, string format, uint threadCount, uint queueSize)
         {
-            //Если служба захосчена в IIS
-            if (request.Properties.ContainsKey("MS_HttpContext"))
-            {
-                return ((HttpContextWrapper)request.Properties["MS_HttpContext"]).Request.UserHostName;
-            }
-
-            //Если служба само хосчена
-            if (request.Properties.ContainsKey(RemoteEndpointMessageProperty.Name))
-            {
-                RemoteEndpointMessageProperty prop;
-                prop = (RemoteEndpointMessageProperty)request.Properties[RemoteEndpointMessageProperty.Name];
-                return prop.Address;
-            }
-
-            return null;
+            return !string.IsNullOrWhiteSpace(format) && ((int)type == (int)Server.ServerType.COMPRESSOR || (int)type == (int)Server.ServerType.DEPRESSOR)
+                && port > 0 && threadCount > 0 && queueSize > 0;
         }
+
 
     }
 }

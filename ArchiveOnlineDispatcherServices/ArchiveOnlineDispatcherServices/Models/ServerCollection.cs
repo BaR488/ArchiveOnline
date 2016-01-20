@@ -3,19 +3,22 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net;
 using System.Web;
+using Newtonsoft.Json;
+using System.IO;
 
 namespace ArchiveOnlineDispatcherServices.Models
 {
     public class ServerCollection
     {
+        private static string archiveStatusResourceUrl = "/archiver/getStatus";
 
         //Подгружает список доступных форматов для сжатия/расжатия
-        public static List<Format> getAvailableFormatsByType(int type)
+        public static List<Format> getAvailableFormatsByType(uint type)
         {
 
             MySqlCommand command = new MySqlCommand();
-
             command.CommandText = "SELECT FORMAT.ID, FORMAT.NAME_FORMAT FROM FORMAT, SERVER WHERE SERVER.TYPE = @type AND SERVER.FORMAT_ID = FORMAT.ID";
             command.Parameters.AddWithValue("@type", type);
 
@@ -34,58 +37,61 @@ namespace ArchiveOnlineDispatcherServices.Models
         //Регистрирует указанный сервер
         public static void registerServer(Server server)
         {
-
-            //Созадем подключение к БД
-            using (MySqlConnection connection = new MySqlConnection(QueryExecutor.mysqlCSB.ConnectionString))
+            //Если сервер доступен то добавляем его в БД
+            if (server.isAvailable())
             {
-
-                MySqlTransaction transaction = null;
-
-                try
+                //Созадем подключение к БД
+                using (MySqlConnection connection = new MySqlConnection(QueryExecutor.mysqlCSB.ConnectionString))
                 {
-                    //Открываем его
-                    connection.Open();
 
-                    //Начинаем транзакцию
-                    transaction = connection.BeginTransaction();
+                    MySqlTransaction transaction = null;
 
-                    //ID формата добавляемого сервера
-                    int formatId= addRowReferencedTable(connection, transaction, "FORMAT", server.Format);
-
-                    //Отключаем проверку целостности данных
-                    MySqlCommand command = new MySqlCommand("SET foreign_key_checks = 0;", connection, transaction);
-                    command.ExecuteNonQuery();
-
-                    //Выполняем запрос по вставке сервера
-                    command.CommandText = "INSERT INTO SERVER VALUES(NULL, @address, @name, @type, @format_id, @thread_count, @queue_size)";
-                    command.Parameters.AddWithValue("@address", server.Address);
-                    command.Parameters.AddWithValue("@name", server.Name);
-                    command.Parameters.AddWithValue("@type", server.Type);
-                    command.Parameters.AddWithValue("@format_id", formatId);
-                    command.Parameters.AddWithValue("@thread_count", server.ThreadCount);
-                    command.Parameters.AddWithValue("@queue_size", server.QueueSize);
-                    command.ExecuteNonQuery();
-
-                    //Включаем проверку обратно
-                    command.CommandText = "SET foreign_key_checks = 1;";
-                    command.ExecuteNonQuery();
-
-                    //Применяем изменения
-                    transaction.Commit();
-                }
-                catch (Exception ex)
-                {
-                    if (transaction != null)
+                    try
                     {
-                        transaction.Rollback();
+                        //Открываем его
+                        connection.Open();
+
+                        //Начинаем транзакцию
+                        transaction = connection.BeginTransaction();
+
+                        //ID формата добавляемого сервера
+                        int formatId = addRowReferencedTable(connection, transaction, "FORMAT", server.Format);
+
+
+                        MySqlCommand command = new MySqlCommand("SET foreign_key_checks = 0;", connection, transaction);
+                        command.ExecuteNonQuery();
+
+                        //Выполняем запрос по вставке сервера
+                        command.CommandText = "INSERT INTO SERVER VALUES(NULL, @address, @port, @type, @format_id, @thread_count, @queue_size)";
+                        command.Parameters.AddWithValue("@address", server.Address);
+                        command.Parameters.AddWithValue("@port", server.Port);
+                        command.Parameters.AddWithValue("@type", server.Type);
+                        command.Parameters.AddWithValue("@format_id", formatId);
+                        command.Parameters.AddWithValue("@thread_count", server.ThreadCount);
+                        command.Parameters.AddWithValue("@queue_size", server.QueueSize);
+                        command.ExecuteNonQuery();
+
+
+                        command.CommandText = "SET foreign_key_checks = 1;";
+                        command.ExecuteNonQuery();
+
+                        //Применяем изменения
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        if (transaction != null)
+                        {
+                            transaction.Rollback();
+                        }
                     }
                 }
-                finally
-                {
-                    connection.Close();
-                }
-
             }
+            else
+            {
+                throw new Exception("Регистрация невозможна, регестрируемый сервер не отвечает на запросы");
+            }
+            
 
         }
 
@@ -114,6 +120,53 @@ namespace ArchiveOnlineDispatcherServices.Models
             }
 
             return insert_id;
+        }
+
+        //Возвращает список серверов по типу и формату
+        public static List<Server> getServersByTypeAndFormat(uint type, string format)
+        {
+            MySqlCommand command = new MySqlCommand();
+            command.CommandText = "SELECT * FROM SERVER, FORMAT WHERE FORMAT.NAME_FORMAT=@format AND SERVER.TYPE=@type AND SERVER.FORMAT_ID=FORMAT.ID";
+            command.Parameters.AddWithValue("@type", type);
+            command.Parameters.AddWithValue("@format", format);
+
+            DataTable serversDt = QueryExecutor.ExecuteQuery(command);
+
+            List<Server> serversList = new List<Server>();
+
+            foreach (DataRow row in serversDt.Rows)
+            {
+                Server newServer = new Server((uint)row[2], (Server.ServerType)type, row[1].ToString(), format, (uint)row[5], (uint)row[6]);
+                serversList.Add(newServer);
+            }
+
+            return serversList;
+        }
+
+        //Возвращает самый не нагруженный сервер, выполняющий поддерживающий указанный формат
+        public static Server getMostIdleServer(uint type, string format)
+        {
+            //Получаем список всех серверов из БД
+            List<Server> servers = getServersByTypeAndFormat(type, format);
+
+            //Удлаяем все сервера которы не доступны
+            servers.RemoveAll(server => !server.isAvailable());
+
+            //Если остались сервера
+            if (servers.Count > 0)
+            {
+                //Сортируем сервера по нагруженности
+                List<Server> ordered = servers.OrderBy(server => server.ServerStatus.filesInProgress).ToList();
+
+                //Возвращаем самый не загруженый
+                return ordered[0];
+            }
+            else
+            {
+                return null;
+            }
+
+
         }
     }
 }

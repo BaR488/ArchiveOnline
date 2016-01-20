@@ -1,16 +1,47 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Web;
 
 namespace ArchiveOnlineDispatcherServices.Models
 {
     public class Server
     {
+        private static string archiveStatusResourceUrl = "/archiver/getStatus";
+
+        public enum ServerType { COMPRESSOR, DEPRESSOR };
+
+        //Класс статус сервера
+        public class ServerStatusClass
+        {
+            public ServerStatusClass(int filesInProgress)
+            {
+                this.filesInProgress = filesInProgress;
+            }
+            public int filesInProgress;
+        }
+
+        //Порт сервера
+        private uint port;
+        public uint Port
+        {
+            get
+            {
+                return port;
+            }
+
+            set
+            {
+                port = value;
+            }
+        }
 
         //Тип сервера, 0 - сжатие, 1 - расжатие
-        private int type;
-        public int Type
+        private uint type;
+        public uint Type
         {
             get
             {
@@ -38,21 +69,6 @@ namespace ArchiveOnlineDispatcherServices.Models
             }
         }
 
-        //Имя сервера
-        private string name;
-        public string Name
-        {
-            get
-            {
-                return name;
-            }
-
-            set
-            {
-                name = value;
-            }
-        }
-
         //Формат с которым работает сервер
         private string format;
         public string Format
@@ -69,8 +85,8 @@ namespace ArchiveOnlineDispatcherServices.Models
         }
 
         // Количество одноверменно запускаемых потоков
-        private int threadCount;
-        public int ThreadCount
+        private uint threadCount;
+        public uint ThreadCount
         {
             get
             {
@@ -84,8 +100,8 @@ namespace ArchiveOnlineDispatcherServices.Models
         }
 
         //Размер очереди
-        private int queueSize;
-        public int QueueSize
+        private uint queueSize;
+        public uint QueueSize
         {
             get
             {
@@ -98,17 +114,67 @@ namespace ArchiveOnlineDispatcherServices.Models
             }
         }
 
-
-        public Server(int type, string address, string name, string format, int threadCount, int queueSize)
+        //Последний полученный статус сервера
+        private ServerStatusClass serverStatus;
+        public ServerStatusClass ServerStatus
         {
-            this.type = type;
+            get
+            {
+                return serverStatus;
+            }
+
+            set
+            {
+                serverStatus = value;
+            }
+        }
+
+        public Server(uint port, ServerType type, string address, string format, uint threadCount, uint queueSize)
+        {
+            this.port = port;
+            this.type = (uint) type;
             this.address = address;
-            this.name = name;
             this.format = format;
             this.threadCount = threadCount;
             this.queueSize = queueSize;
         }
 
+        //Возвращает статус сервера
+        public ServerStatusClass getServerStatus()
+        {
+            try
+            {
+                //Создаем запрос к веб ресурсу для проверки состояния сервера
+                Uri uri = new Uri("http://" + this.Address + ":" + this.Port + archiveStatusResourceUrl);
+                HttpWebRequest request = WebRequest.Create(uri) as HttpWebRequest;
+
+                //Получаем ответ
+                using (HttpWebResponse response = request.GetResponse() as HttpWebResponse)
+                {
+                    // Извлекаем содержимое запроса
+                    StreamReader reader = new StreamReader(response.GetResponseStream());
+
+                    //Конвертируем полученный JSON в объект
+                    serverStatus = JsonConvert.DeserializeObject<Server.ServerStatusClass>(reader.ReadToEnd());
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Server " + Address + ":" + Port + " is not available");
+                serverStatus = null;
+            }
+
+            //Возвращаем статус сервера
+            return serverStatus;
+        }
+
+        //Проверяет доступен ли сервер
+        public bool isAvailable()
+        {
+            return getServerStatus() != null;
+        }
 
     }
 }

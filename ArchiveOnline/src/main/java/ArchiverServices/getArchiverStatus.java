@@ -15,7 +15,7 @@ import javax.ws.rs.core.MediaType;
  *
  * @author minel
  */
-@Path("/archiver/status")
+@Path("/archiver/getStatus")
 public class getArchiverStatus {
 
     @GET

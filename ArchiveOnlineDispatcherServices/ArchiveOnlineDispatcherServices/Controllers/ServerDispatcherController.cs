@@ -15,10 +15,33 @@ namespace ArchiveOnlineDespatcherServices.Controllers
     public class ServerDispatcherController : ApiController
     {
 
-        [Route("api/servers")]
-        public object GetFormatsList(int type)
+        [Route("api/getFormats")]
+        public HttpResponseMessage GetFormatsList(uint type)
         {
-            return ServerCollection.getAvailableFormatsByType(type);
+            try
+            {
+                if (CheckType(type))
+                {
+                    List<Format> formats = ServerCollection.getAvailableFormatsByType(type);
+                    return Request.CreateResponse(HttpStatusCode.OK, formats);
+                }
+                else
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Неверныйтип сервера сервера, допустимые значения 0 - сжатие, 1 - расжатие.");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ex.Message);
+            }
+            
+            
+        }
+
+        public bool CheckType(uint type)
+        {
+            return ((int)type == (int)Server.ServerType.COMPRESSOR || (int)type == (int)Server.ServerType.DEPRESSOR);
         }
 
     }
