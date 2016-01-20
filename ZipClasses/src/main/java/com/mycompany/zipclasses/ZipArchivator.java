@@ -32,8 +32,8 @@ public class ZipArchivator {
             }
 
             //get the zip file content
-            ZipInputStream zis
-                    = new ZipInputStream(new FileInputStream(zipFile));
+            ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile));
+            
             //get the zipped file list entry
             ZipEntry ze = zis.getNextEntry();
 

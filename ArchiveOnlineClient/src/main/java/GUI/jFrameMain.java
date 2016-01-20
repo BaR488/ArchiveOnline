@@ -1,5 +1,7 @@
 package GUI;
 
+import ArchiverServices.UploadFileService;
+import DispatcherServices.GetIdleServerService;
 import DispatcherServices.GetServersService;
 import com.sun.jersey.api.client.ClientHandlerException;
 import java.io.File;
@@ -9,7 +11,7 @@ import java.util.logging.Logger;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
+import org.json.simple.parser.ParseException;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -21,6 +23,9 @@ import javax.swing.JPanel;
  * @author minel
  */
 public class jFrameMain extends javax.swing.JFrame {
+
+    private static String TITLE_DEFAULT = "Архиватор онлайн";
+    private static String TITLE_UPLOADING = "Архиватор онлайн [Передача файла]";
 
     private JFileChooser fileChooser;
 
@@ -41,6 +46,7 @@ public class jFrameMain extends javax.swing.JFrame {
                     "Ошибка", JOptionPane.ERROR_MESSAGE);
         }
         initComponents();
+        this.setTitle(TITLE_DEFAULT);
         fileChooser = new JFileChooser();
 
     }
@@ -118,6 +124,11 @@ public class jFrameMain extends javax.swing.JFrame {
         jButtonArchive.setText("Сжать");
         jButtonArchive.setToolTipText("");
         jButtonArchive.setEnabled(false);
+        jButtonArchive.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonArchiveActionPerformed(evt);
+            }
+        });
 
         jLabelUnArchiveMethod.setText("Способ разархивации");
         jLabelUnArchiveMethod.setEnabled(false);
@@ -126,6 +137,11 @@ public class jFrameMain extends javax.swing.JFrame {
 
         jButtonUnArchive.setText("Разархивировать");
         jButtonUnArchive.setEnabled(false);
+        jButtonUnArchive.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonUnArchiveActionPerformed(evt);
+            }
+        });
 
         jTextFieldFilePath.setEditable(false);
         jTextFieldFilePath.setBackground(new java.awt.Color(220, 220, 220));
@@ -272,8 +288,7 @@ public class jFrameMain extends javax.swing.JFrame {
 
         //Если был выбран файл
         if (returnValue == JFileChooser.APPROVE_OPTION) {
-            File file = fileChooser.getSelectedFile();
-            jTextFieldFilePath.setText(file.getAbsolutePath());
+            jTextFieldFilePath.setText(fileChooser.getSelectedFile().getAbsolutePath());
             enableActions(true);
         } else {
             jTextFieldFilePath.setText("");
@@ -283,6 +298,66 @@ public class jFrameMain extends javax.swing.JFrame {
             ActionsGroup.clearSelection();
         }
     }//GEN-LAST:event_jButtonLoadFileActionPerformed
+
+    private void jButtonArchiveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonArchiveActionPerformed
+        if (checkFields(jComboBoxArchiveMethod)) {
+            uploadFile(GetIdleServerService.ARCHIVE_TYPE, jComboBoxArchiveMethod);
+        } else {
+            JOptionPane.showMessageDialog(this, "Необходимо указать формат архивации",
+                    "Ошибка", JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_jButtonArchiveActionPerformed
+
+    private void jButtonUnArchiveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonUnArchiveActionPerformed
+        if (checkFields(jComboBoxUnArchiveMethod)) {
+            uploadFile(GetIdleServerService.UNARCHIVE_TYPE, jComboBoxUnArchiveMethod);
+        } else {
+            JOptionPane.showMessageDialog(this, "Необходимо указать формат разархивации",
+                    "Ошибка", JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_jButtonUnArchiveActionPerformed
+
+    
+    //Загружает файл
+    private void uploadFile(Integer type, JComboBox<String> comboBox) {
+
+        try {
+
+            //Создаем объект типа сервиса
+            GetIdleServerService getIdleServerService = new GetIdleServerService();
+
+            //Получаем полный адрес сервера
+            String fullAdress = getIdleServerService.getIdleServerAdress(type, comboBox.getSelectedItem().toString());
+
+            if (!fullAdress.isEmpty()) {
+                this.setTitle(TITLE_UPLOADING);
+
+                //Создаем объект типа сервис для загрузки файла
+                UploadFileService uploadFileService = new UploadFileService(fullAdress);
+
+                JOptionPane.showMessageDialog(this, "Передача файла успешно завершена", "Передача файла", JOptionPane.INFORMATION_MESSAGE);
+
+                this.setTitle(TITLE_DEFAULT);
+
+                //Загружаем файл на сервер
+                uploadFileService.uploadFile(fileChooser.getSelectedFile());
+
+            } else {
+                JOptionPane.showMessageDialog(this, "Удаленный сервер в данный момент не доступен, повторите попытку позднее.",
+                        "Ошибка", JOptionPane.ERROR_MESSAGE);
+            }
+
+        } catch (ParseException ex) {
+            Logger.getLogger(jFrameMain.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
+
+    //Проверяет все поля перед отправкой файла архиватору
+    //true - если все норм, false - иначе
+    private boolean checkFields(JComboBox<String> comboBox) {
+        return comboBox.getSelectedIndex() >= 0 && !jTextFieldFilePath.getText().isEmpty();
+    }
 
     //Загружает элементы списка в комбобокс
     private void loadItems(JComboBox<String> comboBox, ArrayList<String> items) {

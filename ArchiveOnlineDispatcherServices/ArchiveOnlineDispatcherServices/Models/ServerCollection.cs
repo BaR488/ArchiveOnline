@@ -156,7 +156,7 @@ namespace ArchiveOnlineDispatcherServices.Models
             if (servers.Count > 0)
             {
                 //Сортируем сервера по нагруженности
-                List<Server> ordered = servers.OrderBy(server => server.ServerStatus.filesInProgress).ToList();
+                List<Server> ordered = servers.OrderBy(server => server.Status.filesInProgress).ToList();
 
                 //Возвращаем самый не загруженый
                 return ordered[0];

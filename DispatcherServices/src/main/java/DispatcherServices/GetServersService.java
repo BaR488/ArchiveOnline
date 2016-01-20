@@ -25,20 +25,16 @@ import org.json.simple.parser.ParseException;
 public class GetServersService extends RESTService {
 
     //Константы типа серверов
-    private final static Integer ARCHIVE_TYPE = 0;
-    private final static Integer UNARCHIVE_TYPE = 1;
-
-    public GetServersService(String serviceUrl) {
-        super(serviceUrl);
-    }
+    public final static Integer ARCHIVE_TYPE = 0;
+    public final static Integer UNARCHIVE_TYPE = 1;
 
     public GetServersService() {
         try {
             Properties properties = new Properties();
-            FileInputStream fileInputStream = new FileInputStream("../Properties/services.properties");
-            properties.load(fileInputStream);
-            init(properties.getProperty("getFormatsResource"));
-            fileInputStream.close();
+            try (FileInputStream fileInputStream = new FileInputStream("../Properties/services.properties")) {
+                properties.load(fileInputStream);
+                init(properties.getProperty("getFormatsResource"));
+            }
         } catch (IOException ex) {
             Logger.getLogger(GetServersService.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -83,7 +79,7 @@ public class GetServersService extends RESTService {
         MultivaluedHashMap paramsMap = new MultivaluedHashMap();
         paramsMap.putSingle("type", ARCHIVE_TYPE.toString());
 
-        return doRequest(paramsMap);
+        return checkGetRequestStatus(paramsMap);
 
     }
 

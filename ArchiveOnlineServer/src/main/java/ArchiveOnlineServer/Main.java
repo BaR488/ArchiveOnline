@@ -6,12 +6,12 @@
 package ArchiveOnlineServer;
 
 import ArchiveProgram.Archiver;
-import com.sun.jersey.api.client.ClientHandlerException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
@@ -21,7 +21,7 @@ import org.glassfish.jersey.servlet.ServletContainer;
  */
 public class Main {
 
-    private static int portNumber = 8084;
+    private static int portNumber = 8080;
     private static Server jettyServer;
 
     /**
@@ -34,12 +34,12 @@ public class Main {
             startJetty(portNumber);
 
             //Создаем объект архиватор
-            Archiver archiver = new Archiver(portNumber, "zipator", 10, 10, Archiver.ServerType.DEPRESSOR);
+            Archiver archiver = new Archiver(portNumber, "zipator", 10, 10, Archiver.ServerType.COMPRESSOR);
 
             for (int i = 0; i < 2; i++) {
                 archiver.addFile("1");
             }
-            
+
             //Регистрируем его
             archiver.register();
 
@@ -59,6 +59,7 @@ public class Main {
 
         ResourceConfig config = new ResourceConfig();
         config.packages("ArchiverServices");
+        config.register(MultiPartFeature.class);
 
         ServletHolder servlet = new ServletHolder(new ServletContainer(config));
 
@@ -67,10 +68,10 @@ public class Main {
 
         try {
             jettyServer.start();
-        }catch (Exception ex) {
+        } catch (Exception ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             jettyServer.destroy();
         }
-        
+
     }
 }

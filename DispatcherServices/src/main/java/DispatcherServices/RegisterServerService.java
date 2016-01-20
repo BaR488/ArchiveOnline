@@ -24,10 +24,10 @@ public class RegisterServerService extends RESTService {
     public RegisterServerService() {
         try {
             Properties properties = new Properties();
-            FileInputStream fileInputStream = new FileInputStream("../Properties/services.properties");
-            properties.load(fileInputStream);
-            init(properties.getProperty("registerResource"));
-            fileInputStream.close();
+            try (FileInputStream fileInputStream = new FileInputStream("../Properties/services.properties")) {
+                properties.load(fileInputStream);
+                init(properties.getProperty("registerResource"));
+            }
         } catch (IOException ex) {
             Logger.getLogger(GetServersService.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -42,10 +42,8 @@ public class RegisterServerService extends RESTService {
         paramsMap.putSingle("format", format);
         paramsMap.putSingle("threadCount", threadCount.toString());
         paramsMap.putSingle("queueSize", queueSize.toString());
-
-        boolean isOk = doRequest(paramsMap);
-        
-        if (isOk) {  
+     
+        if (checkGetRequestStatus(paramsMap)) {  
             SimpleDateFormat dt = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
             System.out.println(dt.format(new Date()) + " Сервер успешно зарегестрирован на главном сервере.");
         } else {

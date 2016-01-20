@@ -15,9 +15,9 @@ namespace ArchiveOnlineDispatcherServices.Models
         public enum ServerType { COMPRESSOR, DEPRESSOR };
 
         //Класс статус сервера
-        public class ServerStatusClass
+        public class ServerStatus
         {
-            public ServerStatusClass(int filesInProgress)
+            public ServerStatus(int filesInProgress)
             {
                 this.filesInProgress = filesInProgress;
             }
@@ -115,17 +115,17 @@ namespace ArchiveOnlineDispatcherServices.Models
         }
 
         //Последний полученный статус сервера
-        private ServerStatusClass serverStatus;
-        public ServerStatusClass ServerStatus
+        private ServerStatus status;
+        public ServerStatus Status
         {
             get
             {
-                return serverStatus;
+                return status;
             }
 
             set
             {
-                serverStatus = value;
+                status = value;
             }
         }
 
@@ -140,7 +140,7 @@ namespace ArchiveOnlineDispatcherServices.Models
         }
 
         //Возвращает статус сервера
-        public ServerStatusClass getServerStatus()
+        public ServerStatus getServerStatus()
         {
             try
             {
@@ -155,7 +155,7 @@ namespace ArchiveOnlineDispatcherServices.Models
                     StreamReader reader = new StreamReader(response.GetResponseStream());
 
                     //Конвертируем полученный JSON в объект
-                    serverStatus = JsonConvert.DeserializeObject<Server.ServerStatusClass>(reader.ReadToEnd());
+                    status = JsonConvert.DeserializeObject<Server.ServerStatus>(reader.ReadToEnd());
 
                 }
 
@@ -163,11 +163,11 @@ namespace ArchiveOnlineDispatcherServices.Models
             catch (Exception ex)
             {
                 Console.WriteLine("Server " + Address + ":" + Port + " is not available");
-                serverStatus = null;
+                status = null;
             }
 
             //Возвращаем статус сервера
-            return serverStatus;
+            return status;
         }
 
         //Проверяет доступен ли сервер
