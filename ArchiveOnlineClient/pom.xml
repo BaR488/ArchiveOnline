@@ -33,7 +33,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>DispatcherServices</artifactId>
+            <artifactId>ServicesClasses</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

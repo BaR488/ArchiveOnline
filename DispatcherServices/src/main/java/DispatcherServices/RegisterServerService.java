@@ -44,10 +44,10 @@ public class RegisterServerService extends RESTService {
         paramsMap.putSingle("queueSize", queueSize.toString());
      
         if (checkGetRequestStatus(paramsMap)) {  
-            SimpleDateFormat dt = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+            SimpleDateFormat dt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             System.out.println(dt.format(new Date()) + " Сервер успешно зарегестрирован на главном сервере.");
         } else {
-            SimpleDateFormat dt = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+            SimpleDateFormat dt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             System.err.println(dt.format(new Date()) + " Ошибка во время регистации. Сервер не был зарегестрирован.");
             throw new RegistrationFailedException("Ошибка во время регистации. Сервер не был зарегестрирован.");
         }

@@ -5,18 +5,17 @@
  */
 package ArchiverServices;
 
-import com.sun.jersey.core.header.FormDataContentDisposition;
-import com.sun.jersey.multipart.FormDataParam;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -24,7 +23,6 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 
 /**
  *
@@ -32,6 +30,8 @@ import org.apache.commons.io.FilenameUtils;
  */
 @Path("/archiver/uploadFile")
 public class FileUploader {
+
+    private static String INITIAL_PATH = "InputFiles\\";
 
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -41,16 +41,24 @@ public class FileUploader {
         try {
             List<FileItem> items = new ServletFileUpload(new DiskFileItemFactory()).parseRequest(servletRequest);
             if (items.size() > 0) {
+
                 FileItem item = items.get(0);
-                InputStream fileContent = item.getInputStream();
-                File targetFile = new File("C:\\Users\\minel\\" + item.getName());
+                String newFileName = INITIAL_PATH + getTimeStamp() + item.getName();
+                InputStream fileContent = items.get(0).getInputStream();
+                File targetFile = new File(newFileName);
                 FileUtils.copyInputStreamToFile(fileContent, targetFile);
                 return Response.ok().build();
             }
             return Response.status(Response.Status.BAD_REQUEST).build();
-        } catch (Exception e) {
-            System.err.println(e);
+        } catch (Exception ex) {
+            System.err.println(ex);
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
+    }
+
+    //Возвращает метку времени
+    public String getTimeStamp() {
+        DateFormat dateFormat = new SimpleDateFormat("MMddHHmmssSSS_");
+        return dateFormat.format(new Date());
     }
 }
