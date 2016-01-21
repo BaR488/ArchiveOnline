@@ -11,28 +11,26 @@ import java.io.File;
  *
  * @author minel
  */
-public class ArchiverThread implements Runnable {
+public abstract class ArchiverThread implements Runnable {
 
-    //private File file;
-    private String file;
+    private String fileName;
     
-    
-
     /**
      * @return the file
      */
-    public String getFile() {
-        return file;
+    public String getFileName() {
+        return fileName;
     }
 
     public ArchiverThread(String file) {
-        this.file = file;
+        this.fileName = file;
     }
 
-    //В данном методе будет происходть сжатие/расжатие файла
-    @Override
-    public void run() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    /**
+     * @param fileName the fileName to set
+     */
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
 }

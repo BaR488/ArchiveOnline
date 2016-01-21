@@ -15,8 +15,9 @@ import java.util.logging.Logger;
 /**
  *
  * @author minel
+ * @param <T> the type of ArchiveThread
  */
-public class Archiver implements ArchiverOnline {
+public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
     //Класс - статус сервера - колво файлов в очереди, колво файлов в процессе
     public static class ArchiverStatus {
@@ -47,17 +48,20 @@ public class Archiver implements ArchiverOnline {
         COMPRESSOR, DEPRESSOR
     }
 
+    private Class<T> typeArgumentClass;
+
     private Integer port; //Порт на котором запущен архиватор
     private Integer type; //тип сжатие/расжатие
     private String format; //Формат сервера
     private Integer threadCount; //Количество одновременно работающих потоков
     private Integer queueSize; //Размер очереди
 
-    //protected ArrayList<? extends ArchiverThread> runningThreads; //Запущенные потоки
-    //protected ArrayList<File> filesInQueue; //Файлы в очереди
-    protected ArrayList<ArchiverThread> runningThreads; //Запущенные потоки
+    protected ArrayList<T> runningThreads; //Запущенные потоки
     protected ArrayList<String> filesInQueue; //Файлы в очереди
 
+//    protected ArrayList<ArchiverThread> runningThreads; //Запущенные потоки
+//    protected ArrayList<String> filesInQueue; //Файлы в очереди
+    
     /**
      * @return the format
      */
@@ -93,14 +97,15 @@ public class Archiver implements ArchiverOnline {
         return port;
     }
 
-    public Archiver(Integer port, String format, Integer threadCount, Integer queueSize, ServerType type) {
+    public Archiver(Class<T> typeArgumentClass, Integer port, String format, Integer threadCount, Integer queueSize, ServerType type) {
+        this.typeArgumentClass = typeArgumentClass;
         this.format = format;
         this.threadCount = threadCount;
         this.queueSize = queueSize;
         this.runningThreads = new ArrayList<>();
         this.filesInQueue = new ArrayList<>();
         this.type = type.ordinal();
-        this.port=port;
+        this.port = port;
         RunningArchiver.archiver = this;
     }
 
@@ -117,17 +122,31 @@ public class Archiver implements ArchiverOnline {
 
     //Добавляет очередной файл на сжатие
     @Override
-    public void addFile(String file) {
+    public void addFile(String fileName) {
         if (runningThreads.size() == threadCount) {
-            filesInQueue.add(file);
-        } else if (runningThreads.size() < threadCount) {
-            runningThreads.add(new ArchiverThread(file));
+            filesInQueue.add(fileName);
+        } else if (runningThreads.size() < threadCount && filesInQueue.isEmpty()) {
+            try {
+                T thread = createArchiverThread(fileName);
+            } catch (InstantiationException | IllegalAccessException ex) {
+                Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else {
+            filesInQueue.add(fileName);
         }
+
     }
 
     //Возвращает статус архиватора
     public ArchiverStatus getStatus() {
         return new ArchiverStatus(filesInQueue.size(), runningThreads.size());
+    }
+
+    //обманываем Generic
+    T createArchiverThread(String fileName) throws InstantiationException, IllegalAccessException {
+        T thread = typeArgumentClass.newInstance();
+        thread.setFileName(fileName);
+        return thread;
     }
 
 }
