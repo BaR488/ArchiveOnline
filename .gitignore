@@ -1,9 +1,6 @@
-/ZipClasses/target/
-/MailClasses/target/
 /ArchiveOnline/target/
-/ArchiveOnlineServer/target/
+/ArchiveOnlineServer/InputFiles/
+/ArchiveOnlineServer/OutputFiles/
 /ArchiveOnlineClient/target/
-/ZipArchiverServer/InputFiles/
-/ZipArchiverServer/OutputFiles/
 /DispatcherServices/target/
-/UtilsProject/target/
+/ServicesClasses/target/
