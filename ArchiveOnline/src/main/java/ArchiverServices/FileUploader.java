@@ -5,6 +5,7 @@
  */
 package ArchiverServices;
 
+import ArchiveProgram.Archiver;
 import java.io.File;
 import java.io.InputStream;
 import java.text.DateFormat;
@@ -31,8 +32,6 @@ import org.apache.commons.io.FileUtils;
 @Path("/archiver/uploadFile")
 public class FileUploader {
 
-    private static String INITIAL_PATH = "InputFiles\\";
-
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.TEXT_HTML)
@@ -43,10 +42,11 @@ public class FileUploader {
             if (items.size() > 0) {
 
                 FileItem item = items.get(0);
-                String newFileName = INITIAL_PATH + getTimeStamp() + item.getName();
+                String newFileName = Archiver.INPUTFILE_PATH + getTimeStamp() + item.getName();
                 InputStream fileContent = items.get(0).getInputStream();
                 File targetFile = new File(newFileName);
                 FileUtils.copyInputStreamToFile(fileContent, targetFile);
+                RunningArchiver.archiver.addFile(newFileName);
                 return Response.ok().build();
             }
             return Response.status(Response.Status.BAD_REQUEST).build();

@@ -330,17 +330,18 @@ public class jFrameMain extends javax.swing.JFrame {
             String fullAdress = getIdleServerService.getIdleServerAdress(type, comboBox.getSelectedItem().toString());
 
             if (!fullAdress.isEmpty()) {
-                this.setTitle(TITLE_UPLOADING);
 
                 //Создаем объект типа сервис для загрузки файла
                 UploadFileService uploadFileService = new UploadFileService(fullAdress);
-
+                
+                this.setTitle(TITLE_UPLOADING);
+                
+                //Загружаем файл на сервер
+                uploadFileService.uploadFile(fileChooser.getSelectedFile());
+                
                 JOptionPane.showMessageDialog(this, "Передача файла успешно завершена", "Передача файла", JOptionPane.INFORMATION_MESSAGE);
 
                 this.setTitle(TITLE_DEFAULT);
-
-                //Загружаем файл на сервер
-                uploadFileService.uploadFile(fileChooser.getSelectedFile());
 
             } else {
                 JOptionPane.showMessageDialog(this, "Удаленный сервер в данный момент не доступен, повторите попытку позднее.",

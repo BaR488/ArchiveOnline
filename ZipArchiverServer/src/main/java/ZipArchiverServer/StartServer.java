@@ -3,9 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package ArchiveOnlineServer;
+package ZipArchiverServer;
 
 import ArchiveProgram.Archiver;
+import Threads.ZipArchiveThread;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.jetty.server.Server;
@@ -19,7 +20,7 @@ import org.glassfish.jersey.servlet.ServletContainer;
  *
  * @author minel
  */
-public class Main {
+public class StartServer {
 
     private static int portNumber = 8080;
     private static Server jettyServer;
@@ -34,27 +35,22 @@ public class Main {
             startJetty(portNumber);
 
             //Создаем объект архиватор
-            Archiver archiver = new Archiver(portNumber, "zipator", 10, 10, Archiver.ServerType.COMPRESSOR);
-
-            for (int i = 0; i < 2; i++) {
-                archiver.addFile("1");
-            }
+            Archiver<ZipArchiveThread> zipArchiver = new Archiver<ZipArchiveThread>(ZipArchiveThread.class, portNumber, "zip", 5, 10, Archiver.ServerType.COMPRESSOR);
 
             //Регистрируем его
-            archiver.register();
+            zipArchiver.register();
 
-            //Главный поток ожидает завершения Jetty
-            jettyServer.join();
+            zipArchiver.start();
 
         } catch (Exception ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(StartServer.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }
 
     //Запускает сервер Jetty на указаном порту
     private static void startJetty(int port) {
-        
+
         jettyServer = new Server(port);
 
         ResourceConfig config = new ResourceConfig();
@@ -69,9 +65,10 @@ public class Main {
         try {
             jettyServer.start();
         } catch (Exception ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(StartServer.class.getName()).log(Level.SEVERE, null, ex);
             jettyServer.destroy();
         }
 
     }
+
 }

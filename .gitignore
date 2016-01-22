@@ -3,7 +3,7 @@
 /ArchiveOnline/target/
 /ArchiveOnlineServer/target/
 /ArchiveOnlineClient/target/
-/ArchiveOnlineServer/InputFiles/
-/ArchiveOnlineServer/OutputFiles/
+/ZipArchiverServer/InputFiles/
+/ZipArchiverServer/OutputFiles/
 /DispatcherServices/target/
 /UtilsProject/target/

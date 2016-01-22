@@ -6,31 +6,38 @@
 package ArchiveProgram;
 
 import java.io.File;
+import java.util.concurrent.Callable;
 
 /**
  *
  * @author minel
  */
-public abstract class ArchiverThread implements Runnable {
+public abstract class ArchiverThread implements Callable<String> {
 
     private String fileName;
-    
+
     /**
      * @return the file
      */
     public String getFileName() {
         return fileName;
     }
-
-    public ArchiverThread(String file) {
-        this.fileName = file;
-    }
-
+    
     /**
      * @param fileName the fileName to set
      */
     public void setFileName(String fileName) {
         this.fileName = fileName;
     }
+
+
+    public ArchiverThread() {
+
+    }
+    
+    public ArchiverThread(String file) {
+        this.fileName = file;
+    }
+
 
 }

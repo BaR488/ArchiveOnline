@@ -9,6 +9,11 @@ package ArchiveProgram;
 import ArchiverServices.RunningArchiver;
 import DispatcherServices.RegisterServerService;
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,6 +23,9 @@ import java.util.logging.Logger;
  * @param <T> the type of ArchiveThread
  */
 public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
+
+    public static String INPUTFILE_PATH = "InputFiles\\";
+    public static String OUTPUTFILE_PATH = "OutputFiles\\";
 
     //Класс - статус сервера - колво файлов в очереди, колво файлов в процессе
     public static class ArchiverStatus {
@@ -56,12 +64,11 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
     private Integer threadCount; //Количество одновременно работающих потоков
     private Integer queueSize; //Размер очереди
 
-    protected ArrayList<T> runningThreads; //Запущенные потоки
-    protected ArrayList<String> filesInQueue; //Файлы в очереди
+    private Integer runningThreads; //Количество выполняющихся потоков
+    private ExecutorService threadPool; //Пул потоков
+    private ExecutorCompletionService<String> pool; //Обертка пула потоков
+    private ArrayList<String> filesInQueue; //Файлы в очереди
 
-//    protected ArrayList<ArchiverThread> runningThreads; //Запущенные потоки
-//    protected ArrayList<String> filesInQueue; //Файлы в очереди
-    
     /**
      * @return the format
      */
@@ -102,10 +109,12 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
         this.format = format;
         this.threadCount = threadCount;
         this.queueSize = queueSize;
-        this.runningThreads = new ArrayList<>();
+        this.runningThreads = 0;
         this.filesInQueue = new ArrayList<>();
         this.type = type.ordinal();
         this.port = port;
+        this.threadPool = Executors.newFixedThreadPool(threadCount);
+        this.pool = new ExecutorCompletionService<>(threadPool);
         RunningArchiver.archiver = this;
     }
 
@@ -123,26 +132,60 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
     //Добавляет очередной файл на сжатие
     @Override
     public void addFile(String fileName) {
-        if (runningThreads.size() == threadCount) {
+
+        //Проверяем если очередь не пуста, или выполняется весь пул занят
+        if (!filesInQueue.isEmpty() || runningThreads == threadCount) {
+
+            //Добавляем файл в очередь
             filesInQueue.add(fileName);
-        } else if (runningThreads.size() < threadCount && filesInQueue.isEmpty()) {
+
+        } else {
             try {
-                T thread = createArchiverThread(fileName);
+
+                //Создаем новое задание на сжатие файла и запускаем его
+                pool.submit(createArchiverThread(fileName));
+
+                //Увеличиваем количество запущенных потоков
+                runningThreads++;
+
             } catch (InstantiationException | IllegalAccessException ex) {
                 Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
             }
-        } else {
-            filesInQueue.add(fileName);
         }
 
     }
 
     //Возвращает статус архиватора
     public ArchiverStatus getStatus() {
-        return new ArchiverStatus(filesInQueue.size(), runningThreads.size());
+        return new ArchiverStatus(filesInQueue.size(), runningThreads);
     }
 
-    //обманываем Generic
+    //Начинает архивацию
+    public void start() {
+        while (true) {
+            try {
+                //Получаем результат выполнения потока
+                String result = pool.take().get();
+
+                //Если есть файлы в очереди, запускаем первый в очереди, иначе уменьшаем количество потоков
+                if (!filesInQueue.isEmpty()) {
+
+                    //Берем следующий файл из очереди
+                    String nextFile = filesInQueue.remove(0);
+
+                    //Запускаем задание архивации
+                    pool.submit(createArchiverThread(nextFile));
+
+                } else {
+                    runningThreads--;
+                }
+            } catch (InterruptedException | ExecutionException | InstantiationException | IllegalAccessException ex) {
+                Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    //Создаем задание для архивации
     T createArchiverThread(String fileName) throws InstantiationException, IllegalAccessException {
         T thread = typeArgumentClass.newInstance();
         thread.setFileName(fileName);
