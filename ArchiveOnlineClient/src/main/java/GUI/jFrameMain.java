@@ -4,12 +4,15 @@ import ArchiverServices.UploadFileService;
 import DispatcherServices.GetIdleServerService;
 import DispatcherServices.GetServersService;
 import com.sun.jersey.api.client.ClientHandlerException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import org.apache.commons.io.FilenameUtils;
 import org.json.simple.parser.ParseException;
 
 /*
@@ -299,7 +302,7 @@ public class jFrameMain extends javax.swing.JFrame {
 
     private void jButtonArchiveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonArchiveActionPerformed
         if (checkFields(jComboBoxArchiveMethod)) {
-            uploadFile(GetIdleServerService.ARCHIVE_TYPE, jComboBoxArchiveMethod,jTextFieldEmail.getText());
+            uploadFile(GetIdleServerService.ARCHIVE_TYPE, jComboBoxArchiveMethod, jTextFieldEmail.getText());
         } else {
             JOptionPane.showMessageDialog(this, "Необходимо указать формат архивации",
                     "Ошибка", JOptionPane.ERROR_MESSAGE);
@@ -308,13 +311,19 @@ public class jFrameMain extends javax.swing.JFrame {
 
     private void jButtonUnArchiveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonUnArchiveActionPerformed
         if (checkFields(jComboBoxUnArchiveMethod)) {
-            uploadFile(GetIdleServerService.UNARCHIVE_TYPE, jComboBoxUnArchiveMethod,jTextFieldEmail.getText());
+            String fileExtenstion = FilenameUtils.getExtension(jTextFieldFilePath.getText().trim());
+            if (!fileExtenstion.equals(jComboBoxUnArchiveMethod.getSelectedItem().toString())) {
+                int showConfirmDialog = JOptionPane.showConfirmDialog(this, "Расширение выбранного файла не совпадает с выбраным форматом", "Вы действительно желаете продолжить?", JOptionPane.YES_NO_OPTION);
+                if (showConfirmDialog == 0) {
+                    uploadFile(GetIdleServerService.UNARCHIVE_TYPE, jComboBoxUnArchiveMethod, jTextFieldEmail.getText());
+                }
+            }
         } else {
             JOptionPane.showMessageDialog(this, "Необходимо указать формат разархивации",
                     "Ошибка", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_jButtonUnArchiveActionPerformed
-   
+
     //Загружает файл
     private void uploadFile(Integer type, JComboBox<String> comboBox, String email) {
 
@@ -330,12 +339,12 @@ public class jFrameMain extends javax.swing.JFrame {
 
                 //Создаем объект типа сервис для загрузки файла
                 UploadFileService uploadFileService = new UploadFileService(fullAdress);
-                
+
                 this.setTitle(TITLE_UPLOADING);
-                
+
                 //Загружаем файл на сервер
-                uploadFileService.uploadFile(fileChooser.getSelectedFile(),email);
-                
+                uploadFileService.uploadFile(fileChooser.getSelectedFile(), email);
+
                 JOptionPane.showMessageDialog(this, "Передача файла успешно завершена", "Передача файла", JOptionPane.INFORMATION_MESSAGE);
 
                 this.setTitle(TITLE_DEFAULT);

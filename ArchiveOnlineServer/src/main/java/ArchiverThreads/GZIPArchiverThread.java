@@ -6,7 +6,6 @@
 package ArchiverThreads;
 
 import ArchiveMethods.GZIPArchiver;
-import ArchiveMethods.SevenZArchiver;
 import ArchiverClasses.Archiver;
 import ArchiverClasses.ArchiverThread;
 import ArchiverClasses.FileEntity;
@@ -18,7 +17,7 @@ import ArchiverClasses.FileEntity;
 public class GZIPArchiverThread extends ArchiverThread {
 
     public static int type = Archiver.ServerType.COMPRESSOR.ordinal();
-    public static String format = "gzip";
+    public static String format = "gz";
 
     @Override
     public FileEntity call() throws Exception {

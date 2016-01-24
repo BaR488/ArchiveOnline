@@ -17,7 +17,7 @@ import ArchiverClasses.FileEntity;
 public class UnGZIPArchiverThread extends ArchiverThread{
 
     public static int type = Archiver.ServerType.DEPRESSOR.ordinal();
-    public static String format = "gzip";
+    public static String format = "gz";
     
     @Override
     public FileEntity call() throws Exception {
