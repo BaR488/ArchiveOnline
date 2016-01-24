@@ -17,7 +17,6 @@ import java.util.logging.Logger;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.sevenz.SevenZMethod;
-import org.apache.commons.compress.archivers.sevenz.SevenZMethodConfiguration;
 import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -30,7 +29,6 @@ public class SevenZArchiver {
 
     public static String compress(String filePath, String outputFolder) {
 
-        logMessage("1");
         try {
             //Создаем директорию если таковой не существует
             File outputDir = new File(outputFolder);
@@ -50,7 +48,6 @@ public class SevenZArchiver {
                 sevenZOutput.write(FileUtils.readFileToByteArray(fileToArchive));
                 sevenZOutput.closeArchiveEntry();
             }
-            logMessage("2");
             return FilenameUtils.getName(zippedFilePath);
 
         } catch (IOException ex) {
@@ -60,8 +57,7 @@ public class SevenZArchiver {
     }
 
     public static String decompress(String filePath, String outputFolder) {
-
-        String fileName = FilenameUtils.getName(filePath);
+        
         //Создаем директорию если таковой не существует
         File outputDir = new File(outputFolder);
         if (!outputDir.exists()) {
