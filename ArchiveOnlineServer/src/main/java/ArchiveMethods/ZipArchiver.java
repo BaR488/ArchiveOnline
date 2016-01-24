@@ -22,8 +22,6 @@ import org.apache.commons.io.FilenameUtils;
  */
 public class ZipArchiver {
 
-    public static String format = "zip"; //Формат архивирования
-
     //Сжатие
     public static String compress(String filePath, String outputFolder) {
 
@@ -36,6 +34,7 @@ public class ZipArchiver {
         String fileName = FilenameUtils.getName(filePath);
         String zippedFilePath = outputFolder + FilenameUtils.removeExtension(fileName) + ".zip"; //Путь к результирующему файлу
         String zippedFileName = FilenameUtils.removeExtension(fileName) + ".zip";
+        
         byte[] b = new byte[1024]; //Буфер
 
         try (FileInputStream in = new FileInputStream(filePath);
@@ -69,16 +68,16 @@ public class ZipArchiver {
 
             ZipEntry entry = zipIn.getNextEntry();
             int bufferSize = 1024;
-                String filePath = outputFolder + File.separator + entry.getName();
-                if (!entry.isDirectory()) {
-                    //Если файл, то распоковываем его
-                    extractFile(zipIn, filePath, bufferSize);
-                } else {
-                    // Если директория, то создаем ее
-                    File dir = new File(filePath);
-                    dir.mkdir();
-                }
-                zipIn.closeEntry();
+            String filePath = outputFolder + File.separator + entry.getName();
+            if (!entry.isDirectory()) {
+                //Если файл, то распоковываем его
+                extractFile(zipIn, filePath, bufferSize);
+            } else {
+                // Если директория, то создаем ее
+                File dir = new File(filePath);
+                dir.mkdir();
+            }
+            zipIn.closeEntry();
             return entry.getName();
         } catch (IOException ex) {
             System.err.println(ex);

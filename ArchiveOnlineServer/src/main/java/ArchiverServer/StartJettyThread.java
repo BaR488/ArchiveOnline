@@ -7,7 +7,6 @@ package ArchiverServer;
 
 import ArchiverClasses.Archiver;
 import ArchiverThreads.ZipArchiveThread;
-import static Utils.ConsoleLogger.logServerStopped;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;

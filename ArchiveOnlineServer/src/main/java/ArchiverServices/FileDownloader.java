@@ -21,8 +21,6 @@ import javax.ws.rs.core.Response;
 @Path("/archiver/downloadFile")
 public class FileDownloader {
 
-
-
     @GET
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response uploadFile(@QueryParam("fileName") String fileName) {

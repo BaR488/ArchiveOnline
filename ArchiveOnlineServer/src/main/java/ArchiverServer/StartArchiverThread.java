@@ -6,15 +6,7 @@
 package ArchiverServer;
 
 import ArchiverClasses.Archiver;
-import ArchiverThreads.ZipArchiveThread;
-import static Utils.ConsoleLogger.logMessage;
 import static Utils.ConsoleLogger.logServerStopped;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.eclipse.jetty.server.Server;
 
 /**
  *

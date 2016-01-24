@@ -37,7 +37,7 @@ public class FileUploader {
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.TEXT_HTML)
-    public Response uploadFile(@QueryParam("email") String email,@Context HttpServletRequest servletRequest) {
+    public Response uploadFile(@QueryParam("email") String email, @Context HttpServletRequest servletRequest) {
 
         try {
             List<FileItem> items = new ServletFileUpload(new DiskFileItemFactory()).parseRequest(servletRequest);

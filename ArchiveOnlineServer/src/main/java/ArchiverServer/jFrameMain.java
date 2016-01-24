@@ -115,7 +115,7 @@ public class jFrameMain extends javax.swing.JFrame {
         jTextAreaConsole.setEditable(false);
         jTextAreaConsole.setBackground(new java.awt.Color(240, 240, 240));
         jTextAreaConsole.setColumns(20);
-        jTextAreaConsole.setFont(new java.awt.Font("Tahoma", 0, 10)); // NOI18N
+        jTextAreaConsole.setFont(new java.awt.Font("Consolas", 0, 12)); // NOI18N
         jTextAreaConsole.setRows(5);
         jTextAreaConsole.setBorder(javax.swing.BorderFactory.createEtchedBorder());
         jTextAreaConsole.setFocusable(false);
@@ -135,8 +135,6 @@ public class jFrameMain extends javax.swing.JFrame {
                 jComboBoxTypeActionPerformed(evt);
             }
         });
-
-        jComboBoxFormat.setSelectedIndex(-1);
 
         jLabel4.setText("Размер очереди");
 

@@ -8,9 +8,7 @@ package ArchiverClasses;
 //import DispatcherServices.RegisterServerService;
 import ArchiverServices.RunningArchiver;
 import DispatcherServices.RegisterServerService;
-import DispatcherServices.RegistrationFailedException;
 import static Utils.ConsoleLogger.logMessage;
-import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -178,13 +176,13 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
             } catch (InstantiationException | IllegalAccessException ex) {
                 Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
             }
-    }
+        }
 
     }
 
     //Начинает архивацию
     public void start() throws InterruptedException {
-        
+
         while (true) {
             try {
                 //Получаем результат выполнения потока
@@ -202,7 +200,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                 } else {
                     runningThreads--;
                 }
-				Utils.MailSender.send(result.getEmail(), "http://localhost:1234/archiver/downloadFile?fileName="+result.getFileNameOutput());
+                Utils.MailSender.send(result.getEmail(), "http://localhost:1234/archiver/downloadFile?fileName=" + result.getFileNameOutput());
             } catch (ExecutionException | InstantiationException | IllegalAccessException ex) {
                 Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
             }
