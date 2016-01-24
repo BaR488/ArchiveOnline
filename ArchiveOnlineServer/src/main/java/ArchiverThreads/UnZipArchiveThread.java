@@ -15,6 +15,9 @@ import ArchiveMethods.ZipArchiver;
  */
 public class UnZipArchiveThread extends ArchiverThread {
 
+    public static int type = Archiver.ServerType.DEPRESSOR.ordinal();
+    public static String format = "zip";
+    
     public UnZipArchiveThread() {
 
     }

@@ -13,19 +13,22 @@ import ArchiveMethods.ZipArchiver;
  *
  * @author minel
  */
-public class ZipArchiveThread extends ArchiverThread{
+public class ZipArchiveThread extends ArchiverThread {
 
-    public ZipArchiveThread(){
-        
+    public static int type = Archiver.ServerType.COMPRESSOR.ordinal();
+    public static String format = "zip";
+
+    public ZipArchiveThread() {
+
     }
-    
+
     public ZipArchiveThread(String file) {
         super(file);
     }
 
     @Override
     public String call() throws Exception {
-       return ZipArchiver.zip(getFileName(), Archiver.OUTPUTFILE_PATH);
+        return ZipArchiver.zip(getFileName(), Archiver.OUTPUTFILE_PATH);
     }
-    
+
 }

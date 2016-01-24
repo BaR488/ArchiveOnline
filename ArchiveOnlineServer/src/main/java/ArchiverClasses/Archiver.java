@@ -55,18 +55,17 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
         COMPRESSOR, DEPRESSOR
     }
 
-    private Class<T> typeArgumentClass;
-
-    private Integer port; //Порт на котором запущен архиватор
-    private Integer type; //тип сжатие/расжатие
-    private String format; //Формат сервера
-    private Integer threadCount; //Количество одновременно работающих потоков
-    private Integer queueSize; //Размер очереди
+    private final Class<T> typeArgumentClass; //Тип потока архиватора
+    private final Integer port; //Порт на котором запущен архиватор
+    private final Integer type; //тип сжатие/расжатие
+    private final String format; //Формат сервера
+    private final Integer threadCount; //Количество одновременно работающих потоков
+    private final Integer queueSize; //Размер очереди
 
     private Integer runningThreads; //Количество выполняющихся потоков
-    private ExecutorService threadPool; //Пул потоков
-    private ExecutorCompletionService<String> pool; //Обертка пула потоков
-    private ArrayList<String> filesInQueue; //Файлы в очереди
+    private final ExecutorService threadPool; //Пул потоков
+    private final ExecutorCompletionService<String> pool; //Обертка пула потоков
+    private final ArrayList<String> filesInQueue; //Файлы в очереди
 
     /**
      * @return the format
@@ -160,7 +159,8 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
     }
 
     //Начинает архивацию
-    public void start() {
+    public void start() throws ExecutionException, InterruptedException{
+        
         while (true) {
             try {
                 //Получаем результат выполнения потока
@@ -178,7 +178,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                 } else {
                     runningThreads--;
                 }
-            } catch (InterruptedException | ExecutionException | InstantiationException | IllegalAccessException ex) {
+            } catch (ExecutionException | InstantiationException | IllegalAccessException ex) {
                 Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
