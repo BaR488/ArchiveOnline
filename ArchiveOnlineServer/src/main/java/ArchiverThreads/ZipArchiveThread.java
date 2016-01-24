@@ -8,6 +8,7 @@ package ArchiverThreads;
 import ArchiverClasses.Archiver;
 import ArchiverClasses.ArchiverThread;
 import ArchiveMethods.ZipArchiver;
+import ArchiverClasses.FileEntity;
 
 /**
  *
@@ -22,13 +23,14 @@ public class ZipArchiveThread extends ArchiverThread {
 
     }
 
-    public ZipArchiveThread(String file) {
+    public ZipArchiveThread(FileEntity file) {
         super(file);
     }
 
     @Override
-    public String call() throws Exception {
-        return ZipArchiver.compress(getFileName(), Archiver.OUTPUTFILE_PATH);
+    public FileEntity call() throws Exception {
+        getFile().setFileNameOutput(ZipArchiver.compress(getInFileName(), Archiver.OUTPUTFILE_PATH));
+        return getFile();
     }
 
 }

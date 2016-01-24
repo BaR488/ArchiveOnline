@@ -35,7 +35,7 @@ public class ZipArchiver {
 
         String fileName = FilenameUtils.getName(filePath);
         String zippedFilePath = outputFolder + FilenameUtils.removeExtension(fileName) + ".zip"; //Путь к результирующему файлу
-
+        String zippedFileName = FilenameUtils.removeExtension(fileName) + ".zip";
         byte[] b = new byte[1024]; //Буфер
 
         try (FileInputStream in = new FileInputStream(filePath);
@@ -46,9 +46,10 @@ public class ZipArchiver {
             while ((count = in.read(b)) > 0) {
                 out.write(b, 0, count);
             }
-            return zippedFilePath;
+            return zippedFileName;
         } catch (Exception e) {
-            return "";
+            System.err.println(e);
+            return null;
         }
 
     }
@@ -68,8 +69,6 @@ public class ZipArchiver {
 
             ZipEntry entry = zipIn.getNextEntry();
             int bufferSize = 1024;
-
-            while (entry != null) {
                 String filePath = outputFolder + File.separator + entry.getName();
                 if (!entry.isDirectory()) {
                     //Если файл, то распоковываем его
@@ -80,11 +79,10 @@ public class ZipArchiver {
                     dir.mkdir();
                 }
                 zipIn.closeEntry();
-                entry = zipIn.getNextEntry();
-            }
-            return outputFolder;
+            return entry.getName();
         } catch (IOException ex) {
-            return "";
+            System.err.println(ex);
+            return null;
         }
     }
 

@@ -12,22 +12,33 @@ import java.util.concurrent.Callable;
  *
  * @author minel
  */
-public abstract class ArchiverThread implements Callable<String> {
+public abstract class ArchiverThread implements Callable<FileEntity> {
 
-    private String fileName;
+    private FileEntity file;
+
+    public FileEntity getFile() {
+        return file;
+    }
 
     /**
      * @return the file
      */
-    public String getFileName() {
-        return fileName;
+    public String getInFileName() {
+        return file.getFileNameInput();
+    }
+    
+        /**
+     * @return the file
+     */
+    public String getOutFileName() {
+        return file.getFileNameOutput();
     }
     
     /**
      * @param fileName the fileName to set
      */
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
+    public void setFile(FileEntity fileName) {
+        this.file = fileName;
     }
 
 
@@ -35,8 +46,8 @@ public abstract class ArchiverThread implements Callable<String> {
 
     }
     
-    public ArchiverThread(String file) {
-        this.fileName = file;
+    public ArchiverThread(FileEntity file) {
+        this.file = file;
     }
 
 

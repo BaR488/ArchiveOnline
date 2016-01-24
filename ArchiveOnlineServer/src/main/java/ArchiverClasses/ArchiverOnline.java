@@ -12,5 +12,5 @@ package ArchiverClasses;
  */
 public interface ArchiverOnline {
     public void register();
-    public void addFile(String file);
+    public void addFile(FileEntity file);
 }

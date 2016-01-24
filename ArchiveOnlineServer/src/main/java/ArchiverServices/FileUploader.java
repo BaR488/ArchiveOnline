@@ -6,6 +6,7 @@
 package ArchiverServices;
 
 import ArchiverClasses.Archiver;
+import ArchiverClasses.FileEntity;
 import java.io.File;
 import java.io.InputStream;
 import java.text.DateFormat;
@@ -17,6 +18,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -35,18 +37,19 @@ public class FileUploader {
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.TEXT_HTML)
-    public Response uploadFile(@Context HttpServletRequest servletRequest) {
+    public Response uploadFile(@QueryParam("email") String email,@Context HttpServletRequest servletRequest) {
 
         try {
             List<FileItem> items = new ServletFileUpload(new DiskFileItemFactory()).parseRequest(servletRequest);
             if (items.size() > 0) {
 
                 FileItem item = items.get(0);
-                String newFileName = Archiver.INPUTFILE_PATH + getTimeStamp() + item.getName();
+                String time = getTimeStamp();
+                String newInFileName = Archiver.INPUTFILE_PATH + time + item.getName();
                 InputStream fileContent = items.get(0).getInputStream();
-                File targetFile = new File(newFileName);
+                File targetFile = new File(newInFileName);
                 FileUtils.copyInputStreamToFile(fileContent, targetFile);
-                RunningArchiver.archiver.addFile(newFileName);
+                RunningArchiver.archiver.addFile(new FileEntity(newInFileName, null, email));
                 return Response.ok().build();
             }
             return Response.status(Response.Status.BAD_REQUEST).build();

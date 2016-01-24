@@ -8,6 +8,7 @@ package ArchiverServices;
 import DispatcherServices.GetServersService;
 import DispatcherServices.RESTService;
 import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.multipart.FormDataBodyPart;
 import com.sun.jersey.multipart.FormDataMultiPart;
 import com.sun.jersey.multipart.file.FileDataBodyPart;
 import java.io.File;
@@ -36,14 +37,10 @@ public class UploadFileService extends RESTService {
         }
     }
 
-    public void uploadFile(File file) {
-        
-        FileDataBodyPart filePart = new FileDataBodyPart("file", file);
-        
+    public void uploadFile(File file, String email) {              
         FormDataMultiPart formDataMultiPart = new FormDataMultiPart();
         formDataMultiPart.bodyPart(new FileDataBodyPart("file", file, MediaType.MULTIPART_FORM_DATA_TYPE));
-        
-        ClientResponse  response = service.type(MediaType.MULTIPART_FORM_DATA_TYPE).post(ClientResponse.class, formDataMultiPart); 
+        ClientResponse  response = service.queryParam("email", email).type(MediaType.MULTIPART_FORM_DATA_TYPE).post(ClientResponse.class, formDataMultiPart); 
     }
 
 }
