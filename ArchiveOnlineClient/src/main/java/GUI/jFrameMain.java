@@ -316,8 +316,7 @@ public class jFrameMain extends javax.swing.JFrame {
                     "Ошибка", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_jButtonUnArchiveActionPerformed
-
-    
+   
     //Загружает файл
     private void uploadFile(Integer type, JComboBox<String> comboBox) {
 
