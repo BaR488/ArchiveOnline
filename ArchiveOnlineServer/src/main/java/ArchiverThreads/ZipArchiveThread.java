@@ -28,7 +28,7 @@ public class ZipArchiveThread extends ArchiverThread {
 
     @Override
     public String call() throws Exception {
-        return ZipArchiver.zip(getFileName(), Archiver.OUTPUTFILE_PATH);
+        return ZipArchiver.compress(getFileName(), Archiver.OUTPUTFILE_PATH);
     }
 
 }

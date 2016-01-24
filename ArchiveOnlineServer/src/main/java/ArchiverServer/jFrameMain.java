@@ -12,13 +12,9 @@ import com.google.common.reflect.ClassPath;
 import java.awt.Color;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -108,11 +104,8 @@ public class jFrameMain extends javax.swing.JFrame {
 
             jLabelServerState.setText(SERVER_STOPPED);
             jLabelServerState.setForeground(SERVER_STOPPED_COLOR);
-        } catch (IOException | ClassNotFoundException | NoSuchFieldException | SecurityException ex) {
-            Logger.getLogger(jFrameMain.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalArgumentException ex) {
-            Logger.getLogger(jFrameMain.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
+            
+        } catch (Exception ex) {
             Logger.getLogger(jFrameMain.class.getName()).log(Level.SEVERE, null, ex);
         }
 
@@ -172,7 +165,6 @@ public class jFrameMain extends javax.swing.JFrame {
             }
         });
 
-        jComboBoxFormat.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "zip" }));
         jComboBoxFormat.setSelectedIndex(-1);
 
         jLabel4.setText("Размер очереди");
@@ -180,6 +172,7 @@ public class jFrameMain extends javax.swing.JFrame {
         jLabel5.setText("Количество потоков");
 
         jButtonStart.setText("Запустить");
+        jButtonStart.setFocusable(false);
         jButtonStart.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButtonStartActionPerformed(evt);
@@ -189,6 +182,7 @@ public class jFrameMain extends javax.swing.JFrame {
         jButtonStop.setText("Остановить");
         jButtonStop.setToolTipText("");
         jButtonStop.setEnabled(false);
+        jButtonStop.setFocusable(false);
         jButtonStop.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButtonStopActionPerformed(evt);
@@ -286,9 +280,10 @@ public class jFrameMain extends javax.swing.JFrame {
             Integer threadCount = new Integer(jTextFieldThreadCount.getText().trim());
             Integer queueSize = new Integer(jTextFieldQueueSize.getText().trim());
             Integer type = jComboBoxType.getSelectedIndex();
+            Class archiverThreadClass = mapArray[type].get(format);
 
             //Создаем поток в котором будет запущен сервер
-            StartServerThread thread = new StartServerThread(ZipArchiveThread.class, port, format,
+            StartServerThread thread = new StartServerThread(archiverThreadClass, port, format,
                     threadCount, queueSize, Archiver.ServerType.values()[type]);
 
             //Запускаем этот поток

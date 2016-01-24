@@ -28,6 +28,6 @@ public class UnZipArchiveThread extends ArchiverThread {
 
     @Override
     public String call() throws Exception {
-        return ZipArchiver.unZip(getFileName(), Archiver.OUTPUTFILE_PATH);
+        return ZipArchiver.decompress(getFileName(), Archiver.OUTPUTFILE_PATH);
     }
 }

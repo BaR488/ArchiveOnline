@@ -25,7 +25,8 @@ public class ZipArchiver {
     public static String format = "zip"; //Формат архивирования
 
     //Сжатие
-    public static String zip(String filePath, String outputFolder) {
+    public static String compress(String filePath, String outputFolder) {
+
         //Создаем директорию если таковой не существует
         File outputDir = new File(outputFolder);
         if (!outputDir.exists()) {
@@ -53,7 +54,7 @@ public class ZipArchiver {
     }
 
     //Расжатие
-    public static String unZip(String inputfilePath, String outputFolder) {
+    public static String decompress(String inputfilePath, String outputFolder) {
 
         String fileName = FilenameUtils.getName(inputfilePath);
 
