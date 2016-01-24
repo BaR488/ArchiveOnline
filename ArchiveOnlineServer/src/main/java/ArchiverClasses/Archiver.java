@@ -64,8 +64,8 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
     private Integer runningThreads; //Количество выполняющихся потоков
     private final ExecutorService threadPool; //Пул потоков
-    private final ExecutorCompletionService<String> pool; //Обертка пула потоков
-    private final ArrayList<String> filesInQueue; //Файлы в очереди
+    private final ExecutorCompletionService<FileEntity> pool; //Обертка пула потоков
+    private final ArrayList<FileEntity> filesInQueue; //Файлы в очереди
 
     /**
      * @return the format
@@ -129,7 +129,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
     //Добавляет очередной файл на сжатие
     @Override
-    public void addFile(String fileName) {
+    public void addFile(FileEntity fileName) {
 
         //Проверяем если очередь не пуста, или выполняется весь пул занят
         if (!filesInQueue.isEmpty() || runningThreads == threadCount) {
@@ -159,18 +159,18 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
     }
 
     //Начинает архивацию
-    public void start() throws ExecutionException, InterruptedException{
+    public void start() throws ExecutionException, InterruptedException, InstantiationException{
         
         while (true) {
             try {
                 //Получаем результат выполнения потока
-                String result = pool.take().get();
-
+                FileEntity result = pool.take().get();
+                                
                 //Если есть файлы в очереди, запускаем первый в очереди, иначе уменьшаем количество потоков
                 if (!filesInQueue.isEmpty()) {
 
                     //Берем следующий файл из очереди
-                    String nextFile = filesInQueue.remove(0);
+                    FileEntity nextFile = filesInQueue.remove(0);
 
                     //Запускаем задание архивации
                     pool.submit(createArchiverThread(nextFile));
@@ -178,16 +178,17 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                 } else {
                     runningThreads--;
                 }
-            } catch (ExecutionException | InstantiationException | IllegalAccessException ex) {
+                Utils.MailSender.send(result.getEmail(), "http://localhost:1234/archiver/downloadFile?fileName="+result.getFileNameOutput());
+            } catch (ExecutionException | IllegalAccessException ex) {
                 Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
 
     //Создаем задание для архивации
-    T createArchiverThread(String fileName) throws InstantiationException, IllegalAccessException {
+    T createArchiverThread(FileEntity fileName) throws InstantiationException, IllegalAccessException {
         T thread = typeArgumentClass.newInstance();
-        thread.setFileName(fileName);
+        thread.setFile(fileName);
         return thread;
     }
 

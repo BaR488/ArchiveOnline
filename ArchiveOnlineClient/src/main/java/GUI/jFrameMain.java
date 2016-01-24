@@ -301,7 +301,7 @@ public class jFrameMain extends javax.swing.JFrame {
 
     private void jButtonArchiveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonArchiveActionPerformed
         if (checkFields(jComboBoxArchiveMethod)) {
-            uploadFile(GetIdleServerService.ARCHIVE_TYPE, jComboBoxArchiveMethod);
+            uploadFile(GetIdleServerService.ARCHIVE_TYPE, jComboBoxArchiveMethod,jTextFieldEmail.getText());
         } else {
             JOptionPane.showMessageDialog(this, "Необходимо указать формат архивации",
                     "Ошибка", JOptionPane.ERROR_MESSAGE);
@@ -310,7 +310,7 @@ public class jFrameMain extends javax.swing.JFrame {
 
     private void jButtonUnArchiveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonUnArchiveActionPerformed
         if (checkFields(jComboBoxUnArchiveMethod)) {
-            uploadFile(GetIdleServerService.UNARCHIVE_TYPE, jComboBoxUnArchiveMethod);
+            uploadFile(GetIdleServerService.UNARCHIVE_TYPE, jComboBoxUnArchiveMethod,jTextFieldEmail.getText());
         } else {
             JOptionPane.showMessageDialog(this, "Необходимо указать формат разархивации",
                     "Ошибка", JOptionPane.ERROR_MESSAGE);
@@ -318,7 +318,7 @@ public class jFrameMain extends javax.swing.JFrame {
     }//GEN-LAST:event_jButtonUnArchiveActionPerformed
    
     //Загружает файл
-    private void uploadFile(Integer type, JComboBox<String> comboBox) {
+    private void uploadFile(Integer type, JComboBox<String> comboBox, String email) {
 
         try {
 
@@ -336,7 +336,7 @@ public class jFrameMain extends javax.swing.JFrame {
                 this.setTitle(TITLE_UPLOADING);
                 
                 //Загружаем файл на сервер
-                uploadFileService.uploadFile(fileChooser.getSelectedFile());
+                uploadFileService.uploadFile(fileChooser.getSelectedFile(),email);
                 
                 JOptionPane.showMessageDialog(this, "Передача файла успешно завершена", "Передача файла", JOptionPane.INFORMATION_MESSAGE);
 
