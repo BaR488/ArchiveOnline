@@ -6,24 +6,18 @@
 package ArchiverServer;
 
 import ArchiverClasses.Archiver;
-import ArchiverThreads.ZipArchiveThread;
+import static Utils.ConsoleLogger.*;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.ClassPath;
 import java.awt.Color;
-import java.io.IOException;
 import java.io.PrintStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
-import org.eclipse.jetty.server.Server;
 
 /**
  *
@@ -32,11 +26,9 @@ import org.eclipse.jetty.server.Server;
 public class jFrameMain extends javax.swing.JFrame {
 
     private static final String SERVER_STARTED = "Запущен";
-    private static final String SERVER_STARTING = "Запуск";
     private static final String SERVER_STOPPED = "Остановлен";
 
     private static final Color SERVER_STARTED_COLOR = Color.GREEN;
-    private static final Color SERVER_STARTING_COLOR = Color.YELLOW;
     private static final Color SERVER_STOPPED_COLOR = Color.RED;
 
     //Стандартные поток вывода
@@ -44,34 +36,13 @@ public class jFrameMain extends javax.swing.JFrame {
     public PrintStream standartSystemErr = System.err;
 
     //Поток для запуска сервера
-    private ExecutorService serverThread;
-    private ExecutorService monitorServerThread;
+    private ExecutorService archiverThreadPool;
+    private ExecutorService jettyThreadPool;
+
+    private Archiver<?> archiver;
 
     //Список хеш мапов
     HashMap<String, Class>[] mapArray = new HashMap[2];
-
-    public class MonitorServerThread implements Callable<Server> {
-
-        private Future<Server> serverFuture;
-
-        public MonitorServerThread(Future<Server> serverFuture) {
-            this.serverFuture = serverFuture;
-        }
-
-        @Override
-        public Server call() throws Exception {
-
-            setRunningState();
-            TimeUnit.MILLISECONDS.sleep(2000);
-            setControlsState(true);
-
-            Server server = serverFuture.get();
-            server.stop();
-            server.destroy();
-            return server;
-        }
-
-    }
 
     /**
      * Creates new form jFrameMain
@@ -80,7 +51,7 @@ public class jFrameMain extends javax.swing.JFrame {
 
         try {
             initComponents();
-            
+
             //Перенаправляет потоки ввода вывода
             PrintStream printStream = new PrintStream(new CustomOutputStream(jTextAreaConsole));
             System.setOut(printStream);
@@ -88,7 +59,7 @@ public class jFrameMain extends javax.swing.JFrame {
 
             mapArray[0] = new HashMap<>();
             mapArray[1] = new HashMap<>();
-            
+
             //Берем все пути к классам этого проекта
             ClassPath classPath = ClassPath.from(Thread.currentThread().getContextClassLoader());
 
@@ -104,7 +75,7 @@ public class jFrameMain extends javax.swing.JFrame {
 
             jLabelServerState.setText(SERVER_STOPPED);
             jLabelServerState.setForeground(SERVER_STOPPED_COLOR);
-            
+
         } catch (Exception ex) {
             Logger.getLogger(jFrameMain.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -272,7 +243,10 @@ public class jFrameMain extends javax.swing.JFrame {
         if (checkFields()) {
 
             jTextAreaConsole.setText("");
-            logMessage("Запуск сервера");
+
+            logServerStarting();
+
+            archiver = null;
 
             //Значения с формы
             Integer port = new Integer(jTextFieldPort.getText().trim());
@@ -282,15 +256,45 @@ public class jFrameMain extends javax.swing.JFrame {
             Integer type = jComboBoxType.getSelectedIndex();
             Class archiverThreadClass = mapArray[type].get(format);
 
-            //Создаем поток в котором будет запущен сервер
-            StartServerThread thread = new StartServerThread(archiverThreadClass, port, format,
+            //Создаем поток в котором будет запущен jetty и произведена регистация сервера
+            StartJettyThread webThread = new StartJettyThread(archiverThreadClass, port, format,
                     threadCount, queueSize, Archiver.ServerType.values()[type]);
+            jettyThreadPool = Executors.newSingleThreadExecutor();
 
-            //Запускаем этот поток
-            serverThread = Executors.newSingleThreadExecutor();
-            monitorServerThread = Executors.newSingleThreadExecutor();
-            MonitorServerThread monitorThread = new MonitorServerThread(serverThread.submit(thread));
-            monitorServerThread.submit(monitorThread);
+            //Будующее архиватора
+            Future<Archiver> archiverFuture = jettyThreadPool.submit(webThread);
+
+            try {
+
+                //Дожидаемся завершения запуска Jetty и регистрации архиватора
+                archiver = archiverFuture.get();
+
+                //Если был создан архиватор и зарегестрирован
+                if (archiver != null && archiver.isRegistred()) {
+                    
+                    logServerStarted();
+
+                    //Создаем поток в котором будет происходить архивация
+                    StartArchiverThread archiverThread = new StartArchiverThread(archiver);
+
+                    //Запускаем этот поток
+                    archiverThreadPool = Executors.newSingleThreadExecutor();
+                    archiverThreadPool.submit(archiverThread);
+
+                    setControlsState(true);
+
+                } else {
+                    if (archiver != null) {
+                        archiver.getJettyServer().stop();
+                        archiver.getJettyServer().destroy();
+                    }
+                    setControlsState(false);
+                    logServerStopped();
+                }
+
+            } catch (Exception ex) {
+                Logger.getLogger(jFrameMain.class.getName()).log(Level.SEVERE, null, ex.getMessage());
+            }
 
         }
 
@@ -300,18 +304,20 @@ public class jFrameMain extends javax.swing.JFrame {
     //Остановка сервера
     private void jButtonStopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStopActionPerformed
         try {
-            logMessage("Остановка сервера");
-            serverThread.shutdownNow();
-            monitorServerThread.awaitTermination(500, TimeUnit.MILLISECONDS);
+            if (archiver != null) {
+                archiver.getJettyServer().stop();
+                archiver.getJettyServer().destroy();
+            }
+            archiverThreadPool.shutdownNow();
             setControlsState(false);
-        } catch (InterruptedException ex) {
+        } catch (Exception ex) {
             Logger.getLogger(jFrameMain.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_jButtonStopActionPerformed
 
     private void jComboBoxTypeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBoxTypeActionPerformed
         jComboBoxFormat.removeAllItems();
-        mapArray[jComboBoxType.getSelectedIndex()].keySet().forEach((key)->{
+        mapArray[jComboBoxType.getSelectedIndex()].keySet().forEach((key) -> {
             jComboBoxFormat.addItem(key);
         });
         jComboBoxFormat.setSelectedIndex(-1);
@@ -333,19 +339,6 @@ public class jFrameMain extends javax.swing.JFrame {
             jLabelServerState.setText(SERVER_STOPPED);
             jLabelServerState.setForeground(SERVER_STOPPED_COLOR);
         }
-    }
-
-    //Переводи форму в состояние запуска
-    private void setRunningState() {
-        jComboBoxFormat.setEnabled(false);
-        jComboBoxType.setEnabled(false);
-        jTextFieldPort.setEnabled(false);
-        jTextFieldQueueSize.setEnabled(false);
-        jTextFieldThreadCount.setEnabled(false);
-        jButtonStart.setEnabled(false);
-        jButtonStop.setEnabled(false);
-        jLabelServerState.setText(SERVER_STARTING);
-        jLabelServerState.setForeground(SERVER_STARTING_COLOR);
     }
 
     //Проверка полей
@@ -377,11 +370,6 @@ public class jFrameMain extends javax.swing.JFrame {
         } catch (Exception ex) {
             return false;
         }
-    }
-
-    private void logMessage(String message) {
-        SimpleDateFormat dt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        System.out.println(dt.format(new Date()) + " " + message);
     }
 
     /**

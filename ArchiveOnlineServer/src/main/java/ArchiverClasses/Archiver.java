@@ -8,6 +8,9 @@ package ArchiverClasses;
 //import DispatcherServices.RegisterServerService;
 import ArchiverServices.RunningArchiver;
 import DispatcherServices.RegisterServerService;
+import DispatcherServices.RegistrationFailedException;
+import static Utils.ConsoleLogger.logMessage;
+import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -15,6 +18,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.eclipse.jetty.server.Server;
+import org.json.simple.parser.ParseException;
 
 /**
  *
@@ -25,6 +30,13 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
     public static String INPUTFILE_PATH = "InputFiles\\";
     public static String OUTPUTFILE_PATH = "OutputFiles\\";
+
+    /**
+     * @return the jettyServer
+     */
+    public Server getJettyServer() {
+        return jettyServer;
+    }
 
     //Класс - статус сервера - колво файлов в очереди, колво файлов в процессе
     public static class ArchiverStatus {
@@ -61,7 +73,9 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
     private final String format; //Формат сервера
     private final Integer threadCount; //Количество одновременно работающих потоков
     private final Integer queueSize; //Размер очереди
+    private final Server jettyServer; //Сервер который обслуживает данный архиватор
 
+    private boolean registred = false; //Флаг, зарегестрирован ли сервер
     private Integer runningThreads; //Количество выполняющихся потоков
     private final ExecutorService threadPool; //Пул потоков
     private final ExecutorCompletionService<String> pool; //Обертка пула потоков
@@ -102,7 +116,17 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
         return port;
     }
 
-    public Archiver(Class<T> typeArgumentClass, Integer port, String format, Integer threadCount, Integer queueSize, ServerType type) {
+    //Возвращает статус архиватора
+    public ArchiverStatus getStatus() {
+        return new ArchiverStatus(filesInQueue.size(), runningThreads);
+    }
+
+    public boolean isRegistred() {
+        return registred;
+    }
+
+    public Archiver(Server jettyServer, Class<T> typeArgumentClass, Integer port, String format, Integer threadCount, Integer queueSize, ServerType type) {
+        this.jettyServer = jettyServer;
         this.typeArgumentClass = typeArgumentClass;
         this.format = format;
         this.threadCount = threadCount;
@@ -121,10 +145,15 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
     public void register() {
         try {
             RegisterServerService registerService = new RegisterServerService();
-            registerService.register(port, type, format, threadCount, queueSize);
-        } catch (Exception ex) {
+            registred = registerService.register(port, type, format, threadCount, queueSize);
+            if (registred) {
+                logMessage("Server was successfully at main server.");
+            } else {
+                logMessage("Server was not registred at main server.");
+            }
+        } catch (ParseException ex) {
             Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        } 
     }
 
     //Добавляет очередной файл на сжатие
@@ -153,14 +182,9 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
     }
 
-    //Возвращает статус архиватора
-    public ArchiverStatus getStatus() {
-        return new ArchiverStatus(filesInQueue.size(), runningThreads);
-    }
-
     //Начинает архивацию
-    public void start() throws ExecutionException, InterruptedException{
-        
+    public void start() throws InterruptedException {
+
         while (true) {
             try {
                 //Получаем результат выполнения потока
@@ -178,6 +202,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                 } else {
                     runningThreads--;
                 }
+
             } catch (ExecutionException | InstantiationException | IllegalAccessException ex) {
                 Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
             }

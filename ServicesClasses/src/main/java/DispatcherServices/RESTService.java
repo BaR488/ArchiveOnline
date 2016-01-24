@@ -43,8 +43,7 @@ public class RESTService {
         ClientConfig config = new DefaultClientConfig();
         client = Client.create(config);
         service = client.resource(UriBuilder.fromUri(serviceUrl).build());
-        
-        
+
     }
 
     //Возвращает Массив JSONов от указанного ресурса сервиса, с указанными параметрами
@@ -92,10 +91,13 @@ public class RESTService {
     //Возвращает true если сервис вернул 200 OK
     public boolean checkGetRequestStatus(MultivaluedHashMap<String, String> params) {
 
-        //Получаем ответ сервера
-        ClientResponse serviceResponse = service.queryParams(params).accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+        try {
+            ClientResponse serviceResponse = service.queryParams(params).accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+            return serviceResponse.getStatusInfo().getStatusCode() == ClientResponse.Status.OK.getStatusCode();
+        } catch (Exception ex){
+            return false;
+        }
 
-        return serviceResponse.getStatusInfo().getStatusCode() == ClientResponse.Status.OK.getStatusCode();
     }
-      
+
 }

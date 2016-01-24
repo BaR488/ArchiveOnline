@@ -7,8 +7,8 @@ package ArchiverServer;
 
 import ArchiverClasses.Archiver;
 import ArchiverThreads.ZipArchiveThread;
+import static Utils.ConsoleLogger.logServerStopped;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.jetty.server.Server;
@@ -22,7 +22,7 @@ import org.glassfish.jersey.servlet.ServletContainer;
  *
  * @author minel
  */
-public class StartServerThread implements Callable<Server> {
+public class StartJettyThread implements Callable<Archiver> {
 
     private Class typeArgumentClass; //Тип потока архиватора
     private Integer port; //Порт на котором запущен архиватор
@@ -31,9 +31,9 @@ public class StartServerThread implements Callable<Server> {
     private Integer threadCount; //Количество одновременно работающих потоков
     private Integer queueSize; //Размер очереди
 
-    private Server jettyServer;
+    private Server jettyServer; //Сервер Jetty
 
-    public StartServerThread(Class typeArgumentClass, Integer port, String format, Integer threadCount, Integer queueSize, Archiver.ServerType type) {
+    public StartJettyThread(Class typeArgumentClass, Integer port, String format, Integer threadCount, Integer queueSize, Archiver.ServerType type) {
         this.typeArgumentClass = typeArgumentClass;
         this.format = format;
         this.threadCount = threadCount;
@@ -42,8 +42,10 @@ public class StartServerThread implements Callable<Server> {
         this.port = port;
     }
 
-    //Инициализирует сервер Jetty 
-    private void startJetty(int port) throws Exception {
+    @Override
+    public Archiver call() throws Exception {
+
+        Archiver<ZipArchiveThread> archiver = null;
 
         try {
 
@@ -60,36 +62,18 @@ public class StartServerThread implements Callable<Server> {
 
             jettyServer.start();
 
+            //Создаем объект архиватор
+            archiver = new Archiver<>(jettyServer, typeArgumentClass, port, format, threadCount, queueSize, Archiver.ServerType.values()[type]);
+
+            //Регистрируем его
+            archiver.register();
+
         } catch (Exception ex) {
-            Logger.getLogger(StartServerThread.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(StartJettyThread.class.getName()).log(Level.SEVERE, null, ex);
             stopJetty();
         }
 
-    }
-
-    @Override
-    public Server call() throws Exception {
-
-        //Запускаем сервер Jetty и севрисы
-        startJetty(port);
-        
-        if (jettyServer.isRunning()) {
-
-            //Создаем объект архиватор
-            Archiver<ZipArchiveThread> zipArchiver = new Archiver<>(typeArgumentClass, port, format, threadCount, queueSize, Archiver.ServerType.values()[type]);
-
-            //Регистрируем его
-            zipArchiver.register();
-
-            //Запускаем архивацию
-            try {
-                zipArchiver.start();
-            } catch (InterruptedException ex) {
-                stopJetty();
-            }
-
-        }
-        return jettyServer;
+        return archiver;
     }
 
     private void stopJetty() {
@@ -98,7 +82,7 @@ public class StartServerThread implements Callable<Server> {
             jettyServer.stop();
             jettyServer.destroy();
         } catch (Exception ex) {
-            Logger.getLogger(StartServerThread.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(StartJettyThread.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

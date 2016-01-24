@@ -33,7 +33,7 @@ public class RegisterServerService extends RESTService {
         }
     }
 
-    public void register(Integer port, Integer type, String format, Integer threadCount, Integer queueSize) throws ParseException, RegistrationFailedException {
+    public boolean register(Integer port, Integer type, String format, Integer threadCount, Integer queueSize) throws ParseException {
 
         //Создаем карту с параметрами
         MultivaluedHashMap paramsMap = new MultivaluedHashMap();
@@ -42,15 +42,8 @@ public class RegisterServerService extends RESTService {
         paramsMap.putSingle("format", format);
         paramsMap.putSingle("threadCount", threadCount.toString());
         paramsMap.putSingle("queueSize", queueSize.toString());
-     
-        if (checkGetRequestStatus(paramsMap)) {  
-            SimpleDateFormat dt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            System.out.println(dt.format(new Date()) + " Сервер успешно зарегестрирован на главном сервере.");
-        } else {
-            SimpleDateFormat dt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            System.err.println(dt.format(new Date()) + " Ошибка во время регистации. Сервер не был зарегестрирован.");
-            throw new RegistrationFailedException("Ошибка во время регистации. Сервер не был зарегестрирован.");
-        }
+        
+        return checkGetRequestStatus(paramsMap);
         
     }
 
