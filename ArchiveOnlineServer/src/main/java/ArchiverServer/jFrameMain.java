@@ -269,7 +269,7 @@ public class jFrameMain extends javax.swing.JFrame {
 
                 //Если был создан архиватор и зарегестрирован
                 if (archiver != null && archiver.isRegistred()) {
-                    
+
                     logServerStarted();
 
                     //Создаем поток в котором будет происходить архивация
@@ -347,16 +347,41 @@ public class jFrameMain extends javax.swing.JFrame {
     private boolean checkFields() {
 
         if (!tryParseInt(jTextFieldPort.getText().trim())) {
-            JOptionPane.showMessageDialog(this, "Поле порт не должно быть пустым", "Ошибка", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Порт должен быть натуральным числом", "Ошибка", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        if (new Integer(jTextFieldPort.getText().trim()) <= 0) {
+            JOptionPane.showMessageDialog(this, "Порт должен быть натуральным числом", "Ошибка", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        if (jComboBoxType.getSelectedIndex() < 0) {
+            JOptionPane.showMessageDialog(this, "Необходимо выбрать тип сервера", "Ошибка", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        
+        if (jComboBoxFormat.getSelectedIndex() < 0){
+            JOptionPane.showMessageDialog(this, "Необходимо выбрать формат сервера", "Ошибка", JOptionPane.ERROR_MESSAGE);
             return false;
         }
 
         if (!tryParseInt(jTextFieldQueueSize.getText().trim())) {
-            JOptionPane.showMessageDialog(this, "Размер очереди должен быть натуральным числом", "Ошибка", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Размер очереди должен быть целым неотрицательным числом", "Ошибка", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        if (new Integer(jTextFieldQueueSize.getText().trim()) < 0) {
+            JOptionPane.showMessageDialog(this, "Размер очереди должен быть целым неотрицательным числом", "Ошибка", JOptionPane.ERROR_MESSAGE);
             return false;
         }
 
         if (!tryParseInt(jTextFieldThreadCount.getText().trim())) {
+            JOptionPane.showMessageDialog(this, "Количество потоков должно быть натуральным числом", "Ошибка", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        if (new Integer(jTextFieldThreadCount.getText().trim()) <= 0) {
             JOptionPane.showMessageDialog(this, "Количество потоков должно быть натуральным числом", "Ошибка", JOptionPane.ERROR_MESSAGE);
             return false;
         }
