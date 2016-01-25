@@ -27,7 +27,7 @@ namespace ArchiveOnlineDespatcherServices.Controllers
                 }
                 else
                 {
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Неверныйтип сервера сервера, допустимые значения 0 - сжатие, 1 - расжатие.");
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Неверный тип сервера сервера, допустимые значения 0 - сжатие, 1 - расжатие.");
                 }
 
             }

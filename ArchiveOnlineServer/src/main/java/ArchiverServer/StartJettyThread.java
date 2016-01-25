@@ -58,14 +58,16 @@ public class StartJettyThread implements Callable<Archiver> {
 
             ServletContextHandler context = new ServletContextHandler(jettyServer, "/*");
             context.addServlet(servlet, "/*");
-
-            jettyServer.start();
-
-            //Создаем объект архиватор
+            
+             //Создаем объект архиватор
             archiver = new Archiver<>(jettyServer, typeArgumentClass, port, format, threadCount, queueSize, Archiver.ServerType.values()[type]);
 
             //Регистрируем его
             archiver.register();
+
+            //Запускаем Jetty
+            jettyServer.start();
+
 
         } catch (Exception ex) {
             Logger.getLogger(StartJettyThread.class.getName()).log(Level.SEVERE, null, ex);

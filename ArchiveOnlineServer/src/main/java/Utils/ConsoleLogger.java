@@ -30,4 +30,8 @@ public class ConsoleLogger {
     public static void logServerStarted(){
         logMessage("************************************SERVER STARTED************************************");
     }
+    
+    public static void logServerStopping(){
+        logMessage("************************************SERVER STOPPING************************************");
+    }
 }

@@ -268,7 +268,7 @@ public class jFrameMain extends javax.swing.JFrame {
                 archiver = archiverFuture.get();
 
                 //Если был создан архиватор и зарегестрирован
-                if (archiver != null && archiver.isRegistred()) {
+                if (archiver != null && archiver.isRegistred() && archiver.getJettyServer().isRunning()) {
                     
                     logServerStarted();
 
@@ -282,6 +282,7 @@ public class jFrameMain extends javax.swing.JFrame {
                     setControlsState(true);
 
                 } else {
+                    logServerStopping();
                     if (archiver != null) {
                         archiver.getJettyServer().stop();
                         archiver.getJettyServer().destroy();
@@ -303,6 +304,7 @@ public class jFrameMain extends javax.swing.JFrame {
     //Остановка сервера
     private void jButtonStopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStopActionPerformed
         try {
+            logServerStopping();
             if (archiver != null) {
                 archiver.getJettyServer().stop();
                 archiver.getJettyServer().destroy();
