@@ -16,21 +16,65 @@ namespace ArchiveOnlineDispatcherServices.Models
         //Подгружает список доступных форматов для сжатия/расжатия
         public static List<Format> getAvailableFormatsByType(uint type)
         {
-
             MySqlCommand command = new MySqlCommand();
-            command.CommandText = "SELECT FORMAT.ID, FORMAT.NAME_FORMAT FROM FORMAT, SERVER WHERE SERVER.TYPE = @type AND SERVER.FORMAT_ID = FORMAT.ID";
+            command.CommandText = "SELECT SERVER.*, FORMAT.NAME_FORMAT FROM SERVER,"
+                + "FORMAT WHERE SERVER.TYPE=@type AND SERVER.FORMAT_ID=FORMAT.ID";
             command.Parameters.AddWithValue("@type", type);
 
             DataTable formatsDt = QueryExecutor.ExecuteQuery(command);
 
-            List<Format> formatList = new List<Format>();
+            List<Server> serverList = new List<Server>();
 
             foreach (DataRow row in formatsDt.Rows)
             {
-                formatList.Add(new Format(row[0].ToString(), row[1].ToString()));
+                uint id = uint.Parse(row[0].ToString());
+                uint port = uint.Parse(row[2].ToString());
+                uint threadCount = uint.Parse(row[5].ToString());
+                uint queueSize = uint.Parse(row[6].ToString());
+
+                serverList.Add(new Server(id, port, (Server.ServerType)type, row[1].ToString(),
+                    row[7].ToString(), threadCount, queueSize));
             }
 
-            return formatList;
+            //Список недоступных серверов
+            List<Server> unavailableServers = serverList.Where(w => !w.isAvailable()).ToList();
+
+            //Если есть недоступные сервера
+            if (unavailableServers.Count > 0)
+            {
+                //Удаляем из БД все не доступные сервера
+                deleteServer(unavailableServers);
+
+                //Удаялем из списка все недоступные сервера
+                serverList.RemoveAll(w => unavailableServers.Contains(w));
+            }
+
+            //Список доступных форматов
+            List<Format> formatsList = new List<Format>();
+
+            //Если в списке серверов еще остались форматы
+            if (serverList.Count > 0)
+            {
+                //Выделяем сервера с различными форматами
+                List<Server> distinctFormatServers = serverList.GroupBy(w => w.Format).Select(group => group.First()).ToList();
+
+                //Для каждого формата находим Id
+                int serverIndex = 0;
+                int dtIndex = 0;
+                while (dtIndex < formatsDt.Rows.Count && serverIndex < distinctFormatServers.Count)
+                {
+                    if (uint.Parse(formatsDt.Rows[dtIndex][0].ToString()) == distinctFormatServers[serverIndex].Id)
+                    {
+                        formatsList.Add(new Format(formatsDt.Rows[dtIndex][4].ToString(), distinctFormatServers[serverIndex].Format));
+                        serverIndex++;
+                    }
+                    dtIndex++;
+                }
+
+            }
+
+            return formatsList;
+
         }
 
         //Регистрирует указанный сервер
@@ -56,8 +100,6 @@ namespace ArchiveOnlineDispatcherServices.Models
 
         }
 
-
-
         //Возвращает самый не нагруженный сервер, выполняющий поддерживающий указанный формат
         public static Server getMostIdleServer(uint type, string format)
         {
@@ -82,6 +124,21 @@ namespace ArchiveOnlineDispatcherServices.Models
             }
         }
 
+        //Удаляет все недоступные сервера
+        public static void removeUnavailableServers()
+        {
+            List<Server> servers = getServers();
+
+            //Список недоступных серверов
+            List<Server> unavailableServers = servers.Where(w => !w.isAvailable()).ToList();
+
+            //Если есть недоступные сервера
+            if (unavailableServers.Count > 0)
+            {
+                deleteServer(unavailableServers);
+            }
+        }
+
         //Удаляем сервер с указаным id
         public static bool deleteServer(uint serverId)
         {
@@ -89,6 +146,19 @@ namespace ArchiveOnlineDispatcherServices.Models
             command.CommandText = "DELETE FROM SERVER WHERE SERVER.ID = @serverId";
             command.Parameters.AddWithValue("@serverId", serverId);
             return QueryExecutor.ExecuteNonQuery(command) > 0;
+        }
+
+        //Удаляет несколько серверов
+        public static void deleteServer(List<Server> servers)
+        {
+            MySqlCommand command = new MySqlCommand();
+            command.CommandText = "DELETE FROM SERVER WHERE SERVER.ID IN ";
+            string range = "(";
+            servers.ForEach(w => range += w.Id + ", ");
+            range = range.Remove(range.LastIndexOf(","), 1);
+            range += ")";
+            command.CommandText += range;
+            int q = QueryExecutor.ExecuteNonQuery(command);
         }
 
         //Добавляет указанный сервер
@@ -145,6 +215,7 @@ namespace ArchiveOnlineDispatcherServices.Models
             }
         }
 
+        //Обнавляет сервер с указаным id, беря параметры из второй переменной
         public static void updateServer(uint serverId, Server server)
         {
             //Созадем подключение к БД
@@ -273,6 +344,56 @@ namespace ArchiveOnlineDispatcherServices.Models
                 return null;
             }
 
+        }
+
+        //Возвращает список серверов по типу
+        public static List<Server> getServersByType(uint type)
+        {
+            MySqlCommand command = new MySqlCommand();
+            command.CommandText = "SELECT SERVER.*, FORMAT.NAME_FORMAT FROM SERVER,"
+                + "FORMAT WHERE SERVER.TYPE=@type AND SERVER.FORMAT_ID=FORMAT.ID";
+            command.Parameters.AddWithValue("@type", type);
+
+            DataTable formatsDt = QueryExecutor.ExecuteQuery(command);
+
+            List<Server> serverList = new List<Server>();
+
+            foreach (DataRow row in formatsDt.Rows)
+            {
+                uint id = uint.Parse(row[0].ToString());
+                uint port = uint.Parse(row[2].ToString());
+                uint threadCount = uint.Parse(row[5].ToString());
+                uint queueSize = uint.Parse(row[6].ToString());
+
+                serverList.Add(new Server(id, port, (Server.ServerType)type, row[1].ToString(),
+                    row[7].ToString(), threadCount, queueSize));
+            }
+
+            return serverList;
+        }
+
+        //Возвращает список всех серверов
+        public static List<Server> getServers()
+        {
+            MySqlCommand command = new MySqlCommand();
+            command.CommandText = "SELECT * FROM SERVER";
+            DataTable formatsDt = QueryExecutor.ExecuteQuery(command);
+
+            List<Server> serverList = new List<Server>();
+
+            foreach (DataRow row in formatsDt.Rows)
+            {
+                uint id = uint.Parse(row[0].ToString());
+                uint port = uint.Parse(row[2].ToString());
+                uint type = uint.Parse(row[3].ToString());
+                uint threadCount = uint.Parse(row[5].ToString());
+                uint queueSize = uint.Parse(row[6].ToString());
+
+                serverList.Add(new Server(id, port, (Server.ServerType)type, row[1].ToString(),
+                    row[4].ToString(), threadCount, queueSize));
+            }
+
+            return serverList;
         }
 
 

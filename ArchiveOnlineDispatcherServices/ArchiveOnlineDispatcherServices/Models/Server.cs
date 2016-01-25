@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Web;
 
 namespace ArchiveOnlineDispatcherServices.Models
@@ -171,20 +173,28 @@ namespace ArchiveOnlineDispatcherServices.Models
         {
             try
             {
-                //Создаем запрос к веб ресурсу для проверки состояния сервера
-                Uri uri = new Uri("http://" + this.Address + ":" + this.Port + archiveStatusResourceUrl);
-                HttpWebRequest request = WebRequest.Create(uri) as HttpWebRequest;
+                HttpClient client = new HttpClient();
+                client.BaseAddress = new Uri("http://" + this.Address + ":" + this.Port + archiveStatusResourceUrl);
 
-                //Получаем ответ
-                using (HttpWebResponse response = request.GetResponse() as HttpWebResponse)
-                {
-                    // Извлекаем содержимое запроса
-                    StreamReader reader = new StreamReader(response.GetResponseStream());
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                    //Конвертируем полученный JSON в объект
-                    status = JsonConvert.DeserializeObject<Server.ServerStatus>(reader.ReadToEnd());
+                HttpResponseMessage response = client.GetAsync("api/yourcustomobjects").Result;
+                
 
-                }
+                ////Создаем запрос к веб ресурсу для проверки состояния сервера
+                //Uri uri = new Uri("http://" + this.Address + ":" + this.Port + archiveStatusResourceUrl);
+                //HttpWebRequest request = WebRequest.Create(uri) as HttpWebRequest;
+
+                ////Получаем ответ
+                //using (HttpWebResponse response = request.GetResponse() as HttpWebResponse)
+                //{
+                //    // Извлекаем содержимое запроса
+                //    StreamReader reader = new StreamReader(response.GetResponseStream());
+
+                //    //Конвертируем полученный JSON в объект
+                //    status = JsonConvert.DeserializeObject<Server.ServerStatus>(reader.ReadToEnd());
+
+                //}
 
             }
             catch (Exception ex)
@@ -200,7 +210,20 @@ namespace ArchiveOnlineDispatcherServices.Models
         //Проверяет доступен ли сервер
         public bool isAvailable()
         {
-            return getServerStatus() != null;
+            try
+            {
+                HttpClient client = new HttpClient();
+                client.BaseAddress = new Uri("http://" + this.Address + ":" + this.Port + archiveStatusResourceUrl);
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                HttpResponseMessage response = client.GetAsync("").Result;
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Server " + Address + ":" + Port + " is not available");
+                return false;
+            }
+
         }
 
     }
