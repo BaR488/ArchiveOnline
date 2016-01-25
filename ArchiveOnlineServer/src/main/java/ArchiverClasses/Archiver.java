@@ -6,6 +6,7 @@
 package ArchiverClasses;
 
 //import DispatcherServices.RegisterServerService;
+import ArchiverServices.RFC5987Encoder;
 import ArchiverServices.RunningArchiver;
 import DispatcherServices.RegisterServerService;
 import static Utils.ConsoleLogger.logFileAddedInProgress;
@@ -292,7 +293,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                 try (FileInputStream fileInputStream = new FileInputStream("src\\main\\resources\\config\\config.properties")) {
                     properties.load(fileInputStream);
                     String serviceDownloadAddress = properties.getProperty("archiverDownloadService");
-                    Utils.MailSender.send(result.getEmail(), serviceDownloadAddress + result.getFileNameOutput());
+                    Utils.MailSender.send(result.getEmail(), serviceDownloadAddress + new RFC5987Encoder().encode(result.getFileNameOutput()));
                     logFileSended(result);
                 } catch (Exception e) {
                     System.out.println(e);
