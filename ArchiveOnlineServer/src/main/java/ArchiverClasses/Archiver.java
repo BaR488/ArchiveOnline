@@ -9,6 +9,7 @@ package ArchiverClasses;
 import ArchiverServices.RunningArchiver;
 import DispatcherServices.RegisterServerService;
 import static Utils.ConsoleLogger.logMessage;
+import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Properties;
@@ -39,32 +40,63 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
     }
 
     //Класс - статус сервера - колво файлов в очереди, колво файлов в процессе
-    public static class ArchiverStatus {
+    public class ArchiverStatus {
 
-        private int filesInProgress;
+        private long filesSizeAtAll;
+        private int filesInQueueNow;
+        private int filesInProgressNow;
 
-        public ArchiverStatus(int filesInQueue, int filesInProgress) {
-            this.filesInProgress = filesInQueue + filesInProgress;
+        public ArchiverStatus(long filesSizeInQueue, long filesSizeInProgress) {
+            this.filesSizeAtAll = filesSizeInQueue + filesSizeInProgress;
+            this.filesInQueueNow = filesInQueue.size();
+            this.filesInProgressNow = filesInProgress.size();
         }
 
         /**
-         * @return the filesInProgress
+         * @return the filesSizeAtAll
          */
-        public int getFilesInProgress() {
-            return filesInProgress;
+        public long getFilesSizeAtAll() {
+            return filesSizeAtAll;
         }
 
         /**
-         * @param filesInProgress the filesInProgress to set
+         * @param filesSizeAtAll the filesSizeAtAll to set
          */
-        public void setFilesInProgress(int filesInProgress) {
-            this.filesInProgress = filesInProgress;
+        public void setFilesSizeAtAll(long filesSizeAtAll) {
+            this.filesSizeAtAll = filesSizeAtAll;
+        }
+
+        /**
+         * @return the filesInQueueNow
+         */
+        public int getFilesInQueueNow() {
+            return filesInQueueNow;
+        }
+
+        /**
+         * @param filesInQueueNow the filesInQueueNow to set
+         */
+        public void setFilesInQueueNow(int filesInQueueNow) {
+            this.filesInQueueNow = filesInQueueNow;
+        }
+
+        /**
+         * @return the filesInProgressNow
+         */
+        public int getFilesInProgressNow() {
+            return filesInProgressNow;
+        }
+
+        /**
+         * @param filesInProgressNow the filesInProgressNow to set
+         */
+        public void setFilesInProgressNow(int filesInProgressNow) {
+            this.filesInProgressNow = filesInProgressNow;
         }
     }
 
     //Тип сервера сжиматель, расжматель
     public enum ServerType {
-
         COMPRESSOR, DEPRESSOR
     }
 
@@ -81,12 +113,14 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
     private final ExecutorService threadPool; //Пул потоков
     private final ExecutorCompletionService<FileEntity> pool; //Обертка пула потоков
     private final ArrayList<FileEntity> filesInQueue; //Файлы в очереди
+    private final ArrayList<FileEntity> filesInProgress; //Файды в обработке
 
     /**
      * @return the format
      */
     public String getFormat() {
         return format;
+
     }
 
     /**
@@ -119,7 +153,24 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
     //Возвращает статус архиватора
     public ArchiverStatus getStatus() {
-        return new ArchiverStatus(filesInQueue.size(), runningThreads);
+        
+        long filesSizeInQueue = 0;
+        for (FileEntity fileEntity : this.filesInQueue) {
+            File file = new File(fileEntity.getFileNameInput());
+            if (file.exists()) {
+                filesSizeInQueue += file.length() / 1024;
+            }
+        }
+        
+        long filesSizeInProgress = 0;
+        for (FileEntity fileEntity : this.filesInProgress) {
+            File file = new File(fileEntity.getFileNameInput());
+            if (file.exists()) {
+                filesSizeInQueue += file.length() / 1024;
+            }
+        }
+
+        return new ArchiverStatus(filesSizeInQueue, filesSizeInProgress);
     }
 
     //Проверяет зарегистрирован ли сервер
@@ -135,6 +186,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
         this.queueSize = queueSize;
         this.runningThreads = 0;
         this.filesInQueue = new ArrayList<>();
+        this.filesInProgress = new ArrayList<>();
         this.type = type.ordinal();
         this.port = port;
         this.threadPool = Executors.newFixedThreadPool(threadCount);
@@ -170,19 +222,21 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
     //Добавляет очередной файл на сжатие
     @Override
-    public void addFile(FileEntity fileName) {
+    public void addFile(FileEntity fileEntity) {
 
         //Проверяем если очередь не пуста, или выполняется весь пул занят
         if (!filesInQueue.isEmpty() || runningThreads == threadCount) {
 
             //Добавляем файл в очередь
-            filesInQueue.add(fileName);
+            filesInQueue.add(fileEntity);
 
         } else {
             try {
 
                 //Создаем новое задание на сжатие файла и запускаем его
-                pool.submit(createArchiverThread(fileName));
+                pool.submit(createArchiverThread(fileEntity));
+
+                filesInProgress.add(fileEntity);
 
                 //Увеличиваем количество запущенных потоков
                 runningThreads++;
@@ -202,6 +256,9 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                 //Получаем результат выполнения потока
                 FileEntity result = pool.take().get();
 
+                //Удаляем из списка файлов в обработке
+                filesInProgress.remove(result);
+
                 //Если есть файлы в очереди, запускаем первый в очереди, иначе уменьшаем количество потоков
                 if (!filesInQueue.isEmpty()) {
 
@@ -211,6 +268,8 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                     //Запускаем задание архивации
                     pool.submit(createArchiverThread(nextFile));
 
+                    filesInProgress.add(nextFile);
+
                 } else {
                     runningThreads--;
                 }
@@ -218,11 +277,12 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                 Properties properties = new Properties();
                 try (FileInputStream fileInputStream = new FileInputStream("src\\main\\resources\\config\\config.properties")) {
                     properties.load(fileInputStream);
-                    String serviceDownloadAddr = properties.getProperty("archiverDownloadService");
-                    Utils.MailSender.send(result.getEmail(), serviceDownloadAddr + result.getFileNameOutput());
-                }catch(Exception e){
+                    String serviceDownloadAddress = properties.getProperty("archiverDownloadService");
+                    Utils.MailSender.send(result.getEmail(), serviceDownloadAddress + result.getFileNameOutput());
+                } catch (Exception e) {
                     System.out.println(e);
-                }   
+                }
+                
             } catch (ExecutionException | InstantiationException | IllegalAccessException ex) {
                 Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
             }

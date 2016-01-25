@@ -19,11 +19,15 @@ namespace ArchiveOnlineDispatcherServices.Models
         //Класс статус сервера
         public class ServerStatus
         {
-            public ServerStatus(int filesInProgress)
+            public ServerStatus(long filesInProgress, int filesInQueueNow, int filesInProgressNow)
             {
-                this.filesInProgress = filesInProgress;
+                this.filesSizeAtAll = filesInProgress;
+                this.filesInQueueNow = filesInQueueNow;
+                this.filesInProgressNow = filesInProgressNow;
             }
-            public int filesInProgress;
+            public long filesSizeAtAll;
+            public int filesInQueueNow;
+            public int filesInProgressNow;
         }
 
         //Id сервера
@@ -173,28 +177,20 @@ namespace ArchiveOnlineDispatcherServices.Models
         {
             try
             {
-                HttpClient client = new HttpClient();
-                client.BaseAddress = new Uri("http://" + this.Address + ":" + this.Port + archiveStatusResourceUrl);
+                //Создаем запрос к веб ресурсу для проверки состояния сервера
+                Uri uri = new Uri("http://" + this.Address + ":" + this.Port + archiveStatusResourceUrl);
+                HttpWebRequest request = WebRequest.Create(uri) as HttpWebRequest;
 
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                //Получаем ответ
+                using (HttpWebResponse response = request.GetResponse() as HttpWebResponse)
+                {
+                    // Извлекаем содержимое запроса
+                    StreamReader reader = new StreamReader(response.GetResponseStream());
 
-                HttpResponseMessage response = client.GetAsync("api/yourcustomobjects").Result;
-                
+                    //Конвертируем полученный JSON в объект
+                    status = JsonConvert.DeserializeObject<Server.ServerStatus>(reader.ReadToEnd());
 
-                ////Создаем запрос к веб ресурсу для проверки состояния сервера
-                //Uri uri = new Uri("http://" + this.Address + ":" + this.Port + archiveStatusResourceUrl);
-                //HttpWebRequest request = WebRequest.Create(uri) as HttpWebRequest;
-
-                ////Получаем ответ
-                //using (HttpWebResponse response = request.GetResponse() as HttpWebResponse)
-                //{
-                //    // Извлекаем содержимое запроса
-                //    StreamReader reader = new StreamReader(response.GetResponseStream());
-
-                //    //Конвертируем полученный JSON в объект
-                //    status = JsonConvert.DeserializeObject<Server.ServerStatus>(reader.ReadToEnd());
-
-                //}
+                }
 
             }
             catch (Exception ex)
@@ -205,6 +201,12 @@ namespace ArchiveOnlineDispatcherServices.Models
 
             //Возвращаем статус сервера
             return status;
+        }
+
+        //Проверяет есть ли свободные места на сервере
+        public bool hasFreePlaces()
+        {
+            return queueSize + threadCount > status.filesInProgressNow + status.filesInQueueNow;
         }
 
         //Проверяет доступен ли сервер

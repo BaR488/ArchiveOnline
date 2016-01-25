@@ -10,6 +10,7 @@ package ArchiverClasses;
  * @author boris
  */
 public class FileEntity {
+
     private String fileNameInput;
     private String fileNameOutput;
 
@@ -27,7 +28,6 @@ public class FileEntity {
         this.fileNameOutput = fileNameOutput;
     }
 
-    
     private String email;
 
     public String getFileNameInput() {
@@ -37,7 +37,6 @@ public class FileEntity {
     public String getFileNameOutput() {
         return fileNameOutput;
     }
-
 
     public void setEmail(String email) {
         this.email = email;
