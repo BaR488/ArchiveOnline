@@ -53,7 +53,7 @@ public class jFrameMain extends javax.swing.JFrame {
             initComponents();
 
             //Перенаправляет потоки ввода вывода
-            PrintStream printStream = new PrintStream(new CustomOutputStream(jTextAreaConsole));
+            PrintStream printStream = new PrintStream(new CustomOutputStream(jTextAreaConsole),true, "Windows-1251");
             System.setOut(printStream);
             System.setErr(printStream);
 
