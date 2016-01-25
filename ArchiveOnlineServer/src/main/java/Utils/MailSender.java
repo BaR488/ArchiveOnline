@@ -7,6 +7,7 @@ package Utils;
 
 import org.apache.commons.mail.DefaultAuthenticator;
 import org.apache.commons.mail.Email;
+import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.SimpleEmail;
 
 /**
@@ -15,8 +16,7 @@ import org.apache.commons.mail.SimpleEmail;
  */
 public class MailSender {
 
-    public static void send(String to, String messageText) {
-        try {
+    public static void send(String to, String messageText) throws EmailException {
             Email email = new SimpleEmail();
             email.setHostName("smtp.yandex.ru");
             email.setSmtpPort(465);
@@ -27,9 +27,6 @@ public class MailSender {
             email.setMsg(messageText);
             email.addTo(to);
             email.send();
-        } catch (Exception e) {
-            System.err.println(e);
-        }
 
     }
 }
