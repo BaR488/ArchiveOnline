@@ -9,7 +9,9 @@ package ArchiverClasses;
 import ArchiverServices.RunningArchiver;
 import DispatcherServices.RegisterServerService;
 import static Utils.ConsoleLogger.logMessage;
+import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -62,6 +64,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
     //Тип сервера сжиматель, расжматель
     public enum ServerType {
+
         COMPRESSOR, DEPRESSOR
     }
 
@@ -211,7 +214,15 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                 } else {
                     runningThreads--;
                 }
-                Utils.MailSender.send(result.getEmail(), "http://localhost:1234/archiver/downloadFile?fileName=" + result.getFileNameOutput());
+
+                Properties properties = new Properties();
+                try (FileInputStream fileInputStream = new FileInputStream("src\\main\\resources\\config\\config.properties")) {
+                    properties.load(fileInputStream);
+                    String serviceDownloadAddr = properties.getProperty("archiverDownloadService");
+                    Utils.MailSender.send(result.getEmail(), serviceDownloadAddr + result.getFileNameOutput());
+                }catch(Exception e){
+                    System.out.println(e);
+                }   
             } catch (ExecutionException | InstantiationException | IllegalAccessException ex) {
                 Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
             }
