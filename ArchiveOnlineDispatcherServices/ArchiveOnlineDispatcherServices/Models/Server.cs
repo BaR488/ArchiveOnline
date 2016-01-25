@@ -24,6 +24,21 @@ namespace ArchiveOnlineDispatcherServices.Models
             public int filesInProgress;
         }
 
+        //Id сервера
+        private uint id;
+        public uint Id
+        {
+            get
+            {
+                return id;
+            }
+
+            set
+            {
+                id = value;
+            }
+        }
+
         //Порт сервера
         private uint port;
         public uint Port
@@ -129,10 +144,22 @@ namespace ArchiveOnlineDispatcherServices.Models
             }
         }
 
+
+        public Server(uint id, uint port, ServerType type, string address, string format, uint threadCount, uint queueSize)
+        {
+            this.id = id;
+            this.port = port;
+            this.type = (uint) type;
+            this.address = address;
+            this.format = format;
+            this.threadCount = threadCount;
+            this.queueSize = queueSize;
+        }
+
         public Server(uint port, ServerType type, string address, string format, uint threadCount, uint queueSize)
         {
             this.port = port;
-            this.type = (uint) type;
+            this.type = (uint)type;
             this.address = address;
             this.format = format;
             this.threadCount = threadCount;

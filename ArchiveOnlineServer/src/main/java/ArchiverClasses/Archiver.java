@@ -73,7 +73,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
     private final Integer queueSize; //Размер очереди
     private final Server jettyServer; //Сервер который обслуживает данный архиватор
 
-    private boolean registred = false; //Флаг, зарегестрирован ли сервер
+    private int serverId = -1; //Id сервера, который выдается дистпечером
     private Integer runningThreads; //Количество выполняющихся потоков
     private final ExecutorService threadPool; //Пул потоков
     private final ExecutorCompletionService<FileEntity> pool; //Обертка пула потоков
@@ -120,7 +120,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
     }
 
     public boolean isRegistred() {
-        return registred;
+        return serverId > 0;
     }
 
     public Archiver(Server jettyServer, Class<T> typeArgumentClass, Integer port, String format, Integer threadCount, Integer queueSize, ServerType type) {
@@ -143,8 +143,8 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
     public void register() {
         try {
             RegisterServerService registerService = new RegisterServerService();
-            registred = registerService.register(port, type, format, threadCount, queueSize);
-            if (registred) {
+            serverId = registerService.register(port, type, format, threadCount, queueSize);
+            if (serverId >= 0) {
                 logMessage("Server was successfully at main server.");
             } else {
                 logMessage("Server was not registred at main server.");

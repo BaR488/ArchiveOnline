@@ -48,6 +48,13 @@ namespace ArchiveOnlineDispatcherServices.Controllers
 
         }
 
+        //[Route("api/delete")]
+        //[HttpGet]
+        //public HttpResponseMessage DeleteServer(uint serverId)
+        //{
+
+        //}
+
         //Возвращает IP адрес клиента
         private string GetClientIp(HttpRequestMessage request)
         {

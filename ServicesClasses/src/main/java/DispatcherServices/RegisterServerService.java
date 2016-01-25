@@ -13,6 +13,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ws.rs.core.MultivaluedHashMap;
+import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
 /**
@@ -33,7 +34,7 @@ public class RegisterServerService extends RESTService {
         }
     }
 
-    public boolean register(Integer port, Integer type, String format, Integer threadCount, Integer queueSize) throws ParseException {
+    public int register(Integer port, Integer type, String format, Integer threadCount, Integer queueSize) throws ParseException {
 
         //Создаем карту с параметрами
         MultivaluedHashMap paramsMap = new MultivaluedHashMap();
@@ -43,8 +44,14 @@ public class RegisterServerService extends RESTService {
         paramsMap.putSingle("threadCount", threadCount.toString());
         paramsMap.putSingle("queueSize", queueSize.toString());
         
-        return checkGetRequestStatus(paramsMap);
         
+        JSONObject jsonServer = getResponseObject(paramsMap);
+        if (jsonServer!=null){
+            return new Integer(jsonServer.get("Id").toString());
+        } else {
+            return -1;
+        }
+
     }
 
 }

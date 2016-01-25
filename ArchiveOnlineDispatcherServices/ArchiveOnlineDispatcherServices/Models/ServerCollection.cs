@@ -71,6 +71,9 @@ namespace ArchiveOnlineDispatcherServices.Models
                         command.Parameters.AddWithValue("@queue_size", server.QueueSize);
                         command.ExecuteNonQuery();
 
+                        //Получаем Id сервера
+                        command.CommandText = "SELECT LAST_INSERT_ID()";
+                        server.Id = Convert.ToUInt32(command.ExecuteScalar());
 
                         command.CommandText = "SET foreign_key_checks = 1;";
                         command.ExecuteNonQuery();
@@ -136,7 +139,7 @@ namespace ArchiveOnlineDispatcherServices.Models
 
             foreach (DataRow row in serversDt.Rows)
             {
-                Server newServer = new Server((uint)row[2], (Server.ServerType)type, row[1].ToString(), format, (uint)row[5], (uint)row[6]);
+                Server newServer = new Server((uint) row[0], (uint)row[2], (Server.ServerType)type, row[1].ToString(), format, (uint)row[5], (uint)row[6]);
                 serversList.Add(newServer);
             }
 
