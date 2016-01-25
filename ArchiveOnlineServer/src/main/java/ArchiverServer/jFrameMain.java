@@ -65,7 +65,7 @@ public class jFrameMain extends javax.swing.JFrame {
             jLabelForQueue.setVisible(false);
 
             //Перенаправляет потоки ввода вывода
-            PrintStream printStream = new PrintStream(new CustomOutputStream(jTextAreaConsole));
+            PrintStream printStream = new PrintStream(new CustomOutputStream(jTextAreaConsole),true, "Windows-1251");
             System.setOut(printStream);
             System.setErr(printStream);
 
@@ -324,7 +324,7 @@ public class jFrameMain extends javax.swing.JFrame {
                     logServerStarted();
 
                     //Создаем поток в котором будет происходить архивация
-                    StartArchiverThread archiverThread = new StartArchiverThread(archiver, this);
+                    StartArchiverThread archiverThread = new StartArchiverThread(archiver);
 
                     //Запускаем этот поток
                     archiverThreadPool = Executors.newSingleThreadExecutor();
@@ -420,7 +420,7 @@ public class jFrameMain extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Необходимо выбрать тип сервера", "Ошибка", JOptionPane.ERROR_MESSAGE);
             return false;
         }
-
+        
         if (jComboBoxFormat.getSelectedIndex() < 0) {
             JOptionPane.showMessageDialog(this, "Необходимо выбрать формат сервера", "Ошибка", JOptionPane.ERROR_MESSAGE);
             return false;

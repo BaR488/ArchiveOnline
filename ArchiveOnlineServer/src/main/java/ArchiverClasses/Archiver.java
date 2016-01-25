@@ -6,8 +6,7 @@
 package ArchiverClasses;
 
 //import DispatcherServices.RegisterServerService;
-import ArchiverServer.StartArchiverThread;
-import ArchiverServer.jFrameMain;
+import ArchiverServices.RFC5987Encoder;
 import ArchiverServices.RunningArchiver;
 import DispatcherServices.RegisterServerService;
 import static Utils.ConsoleLogger.logFileAddedInProgress;
@@ -54,7 +53,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
         public ArchiverStatus(long filesSizeInQueue, long filesSizeInProgress) {
             this.filesSizeAtAll = filesSizeInQueue + filesSizeInProgress;
-            this.filesInQueueNow = getFilesInQueue().size();
+            this.filesInQueueNow = filesInQueue.size();
             this.filesInProgressNow = filesInProgress.size();
         }
 
@@ -173,15 +172,15 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
     //Возвращает статус архиватора
     public ArchiverStatus getStatus() {
-
+        
         long filesSizeInQueue = 0;
-        for (FileEntity fileEntity : this.getFilesInQueue()) {
+        for (FileEntity fileEntity : this.filesInQueue) {
             File file = new File(fileEntity.getFileNameInput());
             if (file.exists()) {
                 filesSizeInQueue += file.length() / 1024;
             }
         }
-
+        
         long filesSizeInProgress = 0;
         for (FileEntity fileEntity : this.filesInProgress) {
             File file = new File(fileEntity.getFileNameInput());
@@ -245,11 +244,11 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
     public void addFile(FileEntity fileEntity) {
 
         //Проверяем если очередь не пуста, или выполняется весь пул занят
-        if (!filesInQueue.isEmpty() || getRunningThreads().equals(threadCount)) {
+        if (!filesInQueue.isEmpty() || runningThreads.equals(threadCount) ) {
 
             //Добавляем файл в очередь
-            getFilesInQueue().add(fileEntity);
-
+            filesInQueue.add(fileEntity);
+            
             logFileAddedInQueue(fileEntity);
 
         } else {
@@ -262,7 +261,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
                 //Увеличиваем количество запущенных потоков
                 runningThreads++;
-
+                
                 logFileAddedInProgress(fileEntity);
 
             } catch (InstantiationException | IllegalAccessException ex) {
@@ -282,20 +281,20 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
                 //Удаляем из списка файлов в обработке
                 filesInProgress.remove(result);
-
+                
                 logFileArchivateCompleted(result);
 
                 //Если есть файлы в очереди, запускаем первый в очереди, иначе уменьшаем количество потоков
                 if (!filesInQueue.isEmpty()) {
 
                     //Берем следующий файл из очереди
-                    FileEntity nextFile = getFilesInQueue().remove(0);
+                    FileEntity nextFile = filesInQueue.remove(0);
 
                     //Запускаем задание архивации
                     pool.submit(createArchiverThread(nextFile));
 
                     filesInProgress.add(nextFile);
-
+                    
                     logFileAddedInProgress(nextFile);
 
                 } else {
@@ -306,12 +305,12 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                 try (FileInputStream fileInputStream = new FileInputStream("src\\main\\resources\\config\\config.properties")) {
                     properties.load(fileInputStream);
                     String serviceDownloadAddress = properties.getProperty("archiverDownloadService");
-                    Utils.MailSender.send(result.getEmail(), serviceDownloadAddress + result.getFileNameOutput());
+                    Utils.MailSender.send(result.getEmail(), serviceDownloadAddress + new RFC5987Encoder().encode(result.getFileNameOutput()));
                     logFileSended(result);
                 } catch (Exception e) {
                     System.out.println(e);
                 }
-
+                
             } catch (ExecutionException | InstantiationException | IllegalAccessException ex) {
                 Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
             }

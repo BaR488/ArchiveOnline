@@ -16,11 +16,9 @@ import javax.swing.JFrame;
 public class StartArchiverThread implements Runnable {
 
     private Archiver<?> archiver;
-    public final JFrame jFrame;
 
-    public StartArchiverThread(Archiver<?> archiver, JFrame jFrame) {
+    public StartArchiverThread(Archiver<?> archiver) {
         this.archiver = archiver;
-        this.jFrame = jFrame;
     }
 
     @Override
