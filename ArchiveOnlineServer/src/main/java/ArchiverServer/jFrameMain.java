@@ -268,7 +268,7 @@ public class jFrameMain extends javax.swing.JFrame {
                 archiver = archiverFuture.get();
 
                 //Если был создан архиватор и зарегестрирован
-                if (archiver != null && archiver.isRegistred() && archiver.getJettyServer().isRunning()) {
+                if (archiver != null && archiver.isRegistred()) {
                     
                     logServerStarted();
 

@@ -36,27 +36,27 @@ namespace ArchiveOnlineDispatcherServices.Models
         //Регистрирует указанный сервер
         public static void registerServer(Server server)
         {
-
-            //Проверяет есть ли отвечающие сервера с таки же адрессом
-            if (checkSameAdressServer(server.Address, server.Port))
+            if (server.isAvailable())
             {
-                addServer(server);
+                Server sameAddressServer = getServerByAddress(server.Address, server.Port);
+                if (sameAddressServer == null)
+                {
+                    addServer(server);
+                }
+                else
+                {
+                    updateServer(sameAddressServer.Id, server);
+                    server.Id = sameAddressServer.Id;
+                }
             }
             else
             {
-                throw new Exception("Регистрация невозможна, сервер с указанным адрессом уже зарегестрирован");
+                throw new Exception("Регистрация невозможна, сервер не отвечает на запросы");
             }
 
         }
 
-        //Удаляем сервер с указаным id
-        public static bool deleteServer(uint serverId)
-        {
-            MySqlCommand command = new MySqlCommand();
-            command.CommandText = "DELETE FROM SERVER WHERE SERVER.ID = @serverId";
-            command.Parameters.AddWithValue("@serverId", serverId);
-            return QueryExecutor.ExecuteNonQuery(command) > 0;
-        }
+
 
         //Возвращает самый не нагруженный сервер, выполняющий поддерживающий указанный формат
         public static Server getMostIdleServer(uint type, string format)
@@ -82,30 +82,13 @@ namespace ArchiveOnlineDispatcherServices.Models
             }
         }
 
-        //Проверяет есть ли в БД сервера с указанными адресами
-        //Если таковые сервера есть, то для каждого проверяется доступен ли он
-        //Если он не доступен, то удаляем его
-        //Возвращает true, если нет отвечающих серверов стаким же Адрессом
-        public static bool checkSameAdressServer(string address, uint port)
+        //Удаляем сервер с указаным id
+        public static bool deleteServer(uint serverId)
         {
-            Server sameAdressServer = getServerByAddress(address, port);
-
-            if (sameAdressServer != null)
-            {
-                if (!sameAdressServer.isAvailable())
-                {
-                    deleteServer(sameAdressServer.Id);
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                return true;
-            }
+            MySqlCommand command = new MySqlCommand();
+            command.CommandText = "DELETE FROM SERVER WHERE SERVER.ID = @serverId";
+            command.Parameters.AddWithValue("@serverId", serverId);
+            return QueryExecutor.ExecuteNonQuery(command) > 0;
         }
 
         //Добавляет указанный сервер
@@ -145,6 +128,58 @@ namespace ArchiveOnlineDispatcherServices.Models
                     //Получаем Id сервера
                     command.CommandText = "SELECT LAST_INSERT_ID()";
                     server.Id = Convert.ToUInt32(command.ExecuteScalar());
+
+                    command.CommandText = "SET foreign_key_checks = 1;";
+                    command.ExecuteNonQuery();
+
+                    //Применяем изменения
+                    transaction.Commit();
+                }
+                catch (Exception ex)
+                {
+                    if (transaction != null)
+                    {
+                        transaction.Rollback();
+                    }
+                }
+            }
+        }
+
+        public static void updateServer(uint serverId, Server server)
+        {
+            //Созадем подключение к БД
+            using (MySqlConnection connection = new MySqlConnection(QueryExecutor.mysqlCSB.ConnectionString))
+            {
+
+                MySqlTransaction transaction = null;
+
+                try
+                {
+                    //Открываем его
+                    connection.Open();
+
+                    //Начинаем транзакцию
+                    transaction = connection.BeginTransaction();
+
+                    //ID формата добавляемого сервера
+                    int formatId = addRowReferencedTable(connection, transaction, "FORMAT", server.Format);
+
+
+                    MySqlCommand command = new MySqlCommand("SET foreign_key_checks = 0;", connection, transaction);
+                    command.ExecuteNonQuery();
+
+                    //Выполняем запрос по изменению
+                    command.CommandText = "UPDATE SERVER SET ADDRESS=@address, PORT=@port, TYPE=@type, "
+                        + "FORMAT_ID=@formatId, THREAD_COUNT=@threadCount, QUEUE_SIZE=@queueSize WHERE SERVER.ID = @serverId";
+                    command.Parameters.AddWithValue("@serverId", serverId);
+                    command.Parameters.AddWithValue("@address", server.Address);
+                    command.Parameters.AddWithValue("@port", server.Port);
+                    command.Parameters.AddWithValue("@type", server.Type);
+                    command.Parameters.AddWithValue("@formatId", formatId);
+                    command.Parameters.AddWithValue("@threadCount", server.ThreadCount);
+                    command.Parameters.AddWithValue("@queueSize", server.QueueSize);
+                    command.ExecuteNonQuery();
+
 
                     command.CommandText = "SET foreign_key_checks = 1;";
                     command.ExecuteNonQuery();
