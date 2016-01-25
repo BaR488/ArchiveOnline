@@ -26,7 +26,7 @@ public class CustomOutputStream extends OutputStream {
     @Override
     public void write(int b) throws IOException {
         // redirects data to the text area
-        jTextArea.append(new String(new byte[]{(byte) b}, Charset.forName("utf-8")));
+        jTextArea.append(new String(new byte[]{(byte) b}, Charset.forName("windows-1251")));
         // scrolls the text area to the end of data
         jTextArea.setCaretPosition(jTextArea.getDocument().getLength());
     }

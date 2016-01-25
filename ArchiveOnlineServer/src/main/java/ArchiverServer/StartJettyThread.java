@@ -58,7 +58,7 @@ public class StartJettyThread implements Callable<Archiver> {
 
             ServletContextHandler context = new ServletContextHandler(jettyServer, "/*");
             context.addServlet(servlet, "/*");
-
+            
             jettyServer.start();
 
             //Создаем объект архиватор
