@@ -8,6 +8,10 @@ package ArchiverClasses;
 //import DispatcherServices.RegisterServerService;
 import ArchiverServices.RunningArchiver;
 import DispatcherServices.RegisterServerService;
+import static Utils.ConsoleLogger.logFileAddedInProgress;
+import static Utils.ConsoleLogger.logFileAddedInQueue;
+import static Utils.ConsoleLogger.logFileArchivateCompleted;
+import static Utils.ConsoleLogger.logFileSended;
 import static Utils.ConsoleLogger.logMessage;
 import java.io.File;
 import java.io.FileInputStream;
@@ -224,11 +228,15 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
     @Override
     public void addFile(FileEntity fileEntity) {
 
+        
+        
         //Проверяем если очередь не пуста, или выполняется весь пул занят
-        if (!filesInQueue.isEmpty() || runningThreads == threadCount) {
+        if (!filesInQueue.isEmpty() || runningThreads.equals(threadCount) ) {
 
             //Добавляем файл в очередь
             filesInQueue.add(fileEntity);
+            
+            logFileAddedInQueue(fileEntity);
 
         } else {
             try {
@@ -240,6 +248,8 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
                 //Увеличиваем количество запущенных потоков
                 runningThreads++;
+                
+                logFileAddedInProgress(fileEntity);
 
             } catch (InstantiationException | IllegalAccessException ex) {
                 Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
@@ -258,6 +268,8 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
                 //Удаляем из списка файлов в обработке
                 filesInProgress.remove(result);
+                
+                logFileArchivateCompleted(result);
 
                 //Если есть файлы в очереди, запускаем первый в очереди, иначе уменьшаем количество потоков
                 if (!filesInQueue.isEmpty()) {
@@ -269,6 +281,8 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                     pool.submit(createArchiverThread(nextFile));
 
                     filesInProgress.add(nextFile);
+                    
+                    logFileAddedInProgress(nextFile);
 
                 } else {
                     runningThreads--;
@@ -279,6 +293,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                     properties.load(fileInputStream);
                     String serviceDownloadAddress = properties.getProperty("archiverDownloadService");
                     Utils.MailSender.send(result.getEmail(), serviceDownloadAddress + result.getFileNameOutput());
+                    logFileSended(result);
                 } catch (Exception e) {
                     System.out.println(e);
                 }

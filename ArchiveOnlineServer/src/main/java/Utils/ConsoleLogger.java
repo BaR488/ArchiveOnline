@@ -5,8 +5,10 @@
  */
 package Utils;
 
+import ArchiverClasses.FileEntity;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  *
@@ -34,4 +36,21 @@ public class ConsoleLogger {
     public static void logServerStopping(){
         logMessage("************************************SERVER STOPPING************************************");
     }
+    
+    public static void logFileAddedInQueue(FileEntity file){
+        logMessage("File " + FilenameUtils.getName(file.getFileNameInput()) + " from " + file.getEmail() + " added in queue");
+    }
+    
+    public static void logFileAddedInProgress(FileEntity file){
+        logMessage("File " + FilenameUtils.getName(file.getFileNameInput()) + " from " + file.getEmail() + " is progressing now");
+    }
+    
+    public static void logFileArchivateCompleted(FileEntity file){
+        logMessage("Processing file " + FilenameUtils.getName(file.getFileNameInput()) + " from " + file.getEmail() + " is done");
+    }
+    
+    public static void logFileSended(FileEntity file){
+        logMessage("File " + FilenameUtils.getName(file.getFileNameOutput()) + " was sended to " + file.getEmail());
+    }
+    
 }

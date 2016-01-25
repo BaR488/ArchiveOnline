@@ -27,7 +27,6 @@ public class MailSender {
             email.setMsg(messageText);
             email.addTo(to);
             email.send();
-            System.out.println("SUCCESS");
         } catch (Exception e) {
             System.err.println(e);
         }
