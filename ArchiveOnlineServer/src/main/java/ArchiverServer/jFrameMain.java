@@ -10,14 +10,19 @@ import static Utils.ConsoleLogger.*;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.ClassPath;
 import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.PrintStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import javax.swing.SwingWorker;
+import javax.swing.Timer;
 
 /**
  *
@@ -39,7 +44,9 @@ public class jFrameMain extends javax.swing.JFrame {
     private ExecutorService archiverThreadPool;
     private ExecutorService jettyThreadPool;
 
-    private Archiver<?> archiver;
+    private Timer updateTimer;
+
+    private static Archiver<?> archiver = null;
 
     //Список хеш мапов
     HashMap<String, Class>[] mapArray = new HashMap[2];
@@ -52,10 +59,25 @@ public class jFrameMain extends javax.swing.JFrame {
         try {
             initComponents();
 
+            jLabelInProgress.setVisible(false);
+            jLabelInQueue.setVisible(false);
+            jLabelForProgress.setVisible(false);
+            jLabelForQueue.setVisible(false);
+
             //Перенаправляет потоки ввода вывода
             PrintStream printStream = new PrintStream(new CustomOutputStream(jTextAreaConsole));
             System.setOut(printStream);
             System.setErr(printStream);
+
+            updateTimer = new Timer(5000, new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent evt) {
+                    if (archiver != null) {
+                        jLabelInQueue.setText(((Integer) archiver.getFilesInQueue().size()).toString());
+                        jLabelInProgress.setText((archiver.getRunningThreads()).toString());
+                    }
+                }
+            });
 
             mapArray[0] = new HashMap<>();
             mapArray[1] = new HashMap<>();
@@ -107,6 +129,10 @@ public class jFrameMain extends javax.swing.JFrame {
         jButtonStop = new javax.swing.JButton();
         jLabel6 = new javax.swing.JLabel();
         jLabelServerState = new javax.swing.JLabel();
+        jLabelForQueue = new javax.swing.JLabel();
+        jLabelInQueue = new javax.swing.JLabel();
+        jLabelForProgress = new javax.swing.JLabel();
+        jLabelInProgress = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("ArchiverOnline - сервер");
@@ -165,6 +191,18 @@ public class jFrameMain extends javax.swing.JFrame {
         jLabelServerState.setForeground(new java.awt.Color(255, 0, 0));
         jLabelServerState.setText("Остановлен");
 
+        jLabelForQueue.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        jLabelForQueue.setText("В очереди:");
+
+        jLabelInQueue.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        jLabelInQueue.setText("0");
+
+        jLabelForProgress.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        jLabelForProgress.setText("В обработке");
+
+        jLabelInProgress.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
+        jLabelInProgress.setText("0");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -202,7 +240,15 @@ public class jFrameMain extends javax.swing.JFrame {
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(jLabel6)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jLabelServerState, javax.swing.GroupLayout.PREFERRED_SIZE, 167, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addComponent(jLabelServerState, javax.swing.GroupLayout.PREFERRED_SIZE, 139, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabelForQueue)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabelInQueue, javax.swing.GroupLayout.PREFERRED_SIZE, 74, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabelForProgress)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabelInProgress, javax.swing.GroupLayout.PREFERRED_SIZE, 74, javax.swing.GroupLayout.PREFERRED_SIZE)))
                         .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -212,7 +258,12 @@ public class jFrameMain extends javax.swing.JFrame {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel6, javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jLabelServerState, javax.swing.GroupLayout.Alignment.TRAILING))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabelServerState)
+                        .addComponent(jLabelForQueue)
+                        .addComponent(jLabelInQueue)
+                        .addComponent(jLabelForProgress)
+                        .addComponent(jLabelInProgress)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 272, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -273,11 +324,13 @@ public class jFrameMain extends javax.swing.JFrame {
                     logServerStarted();
 
                     //Создаем поток в котором будет происходить архивация
-                    StartArchiverThread archiverThread = new StartArchiverThread(archiver);
+                    StartArchiverThread archiverThread = new StartArchiverThread(archiver, this);
 
                     //Запускаем этот поток
                     archiverThreadPool = Executors.newSingleThreadExecutor();
                     archiverThreadPool.submit(archiverThread);
+
+                    updateTimer.start();
 
                     setControlsState(true);
 
@@ -304,6 +357,7 @@ public class jFrameMain extends javax.swing.JFrame {
     //Остановка сервера
     private void jButtonStopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStopActionPerformed
         try {
+            updateTimer.stop();
             logServerStopping();
             if (archiver != null) {
                 archiver.getJettyServer().stop();
@@ -311,6 +365,8 @@ public class jFrameMain extends javax.swing.JFrame {
                 archiver.unRegister();
             }
             archiverThreadPool.shutdownNow();
+            jLabelInProgress.setText("0");
+            jLabelInQueue.setText("0");
             setControlsState(false);
         } catch (Exception ex) {
             Logger.getLogger(jFrameMain.class.getName()).log(Level.SEVERE, null, ex);
@@ -333,7 +389,11 @@ public class jFrameMain extends javax.swing.JFrame {
         jTextFieldQueueSize.setEnabled(!serverIsStarted);
         jTextFieldThreadCount.setEnabled(!serverIsStarted);
         jButtonStart.setEnabled(!serverIsStarted);
+        jLabelInProgress.setVisible(serverIsStarted);
+        jLabelInQueue.setVisible(serverIsStarted);
         jButtonStop.setEnabled(serverIsStarted);
+        jLabelForProgress.setVisible(serverIsStarted);
+        jLabelForQueue.setVisible(serverIsStarted);
         if (serverIsStarted) {
             jLabelServerState.setText(SERVER_STARTED);
             jLabelServerState.setForeground(SERVER_STARTED_COLOR);
@@ -360,8 +420,8 @@ public class jFrameMain extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Необходимо выбрать тип сервера", "Ошибка", JOptionPane.ERROR_MESSAGE);
             return false;
         }
-        
-        if (jComboBoxFormat.getSelectedIndex() < 0){
+
+        if (jComboBoxFormat.getSelectedIndex() < 0) {
             JOptionPane.showMessageDialog(this, "Необходимо выбрать формат сервера", "Ошибка", JOptionPane.ERROR_MESSAGE);
             return false;
         }
@@ -403,6 +463,7 @@ public class jFrameMain extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
+
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -432,6 +493,7 @@ public class jFrameMain extends javax.swing.JFrame {
                 new jFrameMain().setVisible(true);
             }
         });
+
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -445,6 +507,10 @@ public class jFrameMain extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabelForProgress;
+    private javax.swing.JLabel jLabelForQueue;
+    private javax.swing.JLabel jLabelInProgress;
+    private javax.swing.JLabel jLabelInQueue;
     private javax.swing.JLabel jLabelServerState;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextArea jTextAreaConsole;
@@ -452,4 +518,5 @@ public class jFrameMain extends javax.swing.JFrame {
     private javax.swing.JTextField jTextFieldQueueSize;
     private javax.swing.JTextField jTextFieldThreadCount;
     // End of variables declaration//GEN-END:variables
+
 }

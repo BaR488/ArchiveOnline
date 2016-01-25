@@ -7,6 +7,7 @@ package ArchiverServer;
 
 import ArchiverClasses.Archiver;
 import static Utils.ConsoleLogger.logServerStopped;
+import javax.swing.JFrame;
 
 /**
  *
@@ -15,9 +16,11 @@ import static Utils.ConsoleLogger.logServerStopped;
 public class StartArchiverThread implements Runnable {
 
     private Archiver<?> archiver;
+    public final JFrame jFrame;
 
-    public StartArchiverThread(Archiver<?> archiver) {
+    public StartArchiverThread(Archiver<?> archiver, JFrame jFrame) {
         this.archiver = archiver;
+        this.jFrame = jFrame;
     }
 
     @Override
