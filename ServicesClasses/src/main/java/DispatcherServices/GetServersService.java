@@ -79,7 +79,7 @@ public class GetServersService extends RESTService {
         MultivaluedHashMap paramsMap = new MultivaluedHashMap();
         paramsMap.putSingle("type", ARCHIVE_TYPE.toString());
 
-        return checkGetRequestStatus(paramsMap);
+        return doGetRequest(paramsMap);
 
     }
 

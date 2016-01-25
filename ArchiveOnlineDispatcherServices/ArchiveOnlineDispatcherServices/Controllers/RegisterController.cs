@@ -38,22 +38,35 @@ namespace ArchiveOnlineDispatcherServices.Controllers
                 {
                     return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Регистарция сервера невозможна. Неверные параметры сервера");
                 }
-                
+
             }
             catch (Exception ex)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ex.Message);
             }
-            
+
 
         }
 
-        //[Route("api/delete")]
-        //[HttpGet]
-        //public HttpResponseMessage DeleteServer(uint serverId)
-        //{
-
-        //}
+        [Route("api/delete")]
+        [HttpGet]
+        public HttpResponseMessage DeleteServer(uint serverId)
+        {
+            try
+            {
+                if (ServerCollection.deleteServer(serverId))
+                {
+                    return Request.CreateResponse(HttpStatusCode.OK, "Server was succesfully deleted");
+                } else
+                {
+                    return Request.CreateResponse(HttpStatusCode.OK, "There is no registred server with given id");
+                }
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ex.Message);
+            }
+        }
 
         //Возвращает IP адрес клиента
         private string GetClientIp(HttpRequestMessage request)
@@ -79,7 +92,7 @@ namespace ArchiveOnlineDispatcherServices.Controllers
         public bool CheckRegisterParametrs(uint port, uint type, string format, uint threadCount, uint queueSize)
         {
             return !string.IsNullOrWhiteSpace(format) && ((int)type == (int)Server.ServerType.COMPRESSOR || (int)type == (int)Server.ServerType.DEPRESSOR)
-                && port > 0 && threadCount > 0 && queueSize > 0;
+                && port > 0 && threadCount >= 0 && queueSize >= 0 && threadCount + queueSize > 0;
         }
 
 

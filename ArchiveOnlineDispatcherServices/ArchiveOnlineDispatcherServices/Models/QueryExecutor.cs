@@ -51,5 +51,23 @@ namespace ArchiveOnlineDispatcherServices.Models
             return resultDt;
         }
 
+        public static int ExecuteNonQuery(MySqlCommand cmd)
+        {
+            using (MySqlConnection connection = new MySqlConnection(mysqlCSB.ConnectionString))
+            {
+                try
+                {
+                    cmd.Connection = connection;
+                    connection.Open();
+                    return cmd.ExecuteNonQuery();
+                }
+                catch (Exception e)
+                {
+                    System.Console.WriteLine(e.Message);
+                    return -1;
+                }
+            }
+        }
+
     }
 }

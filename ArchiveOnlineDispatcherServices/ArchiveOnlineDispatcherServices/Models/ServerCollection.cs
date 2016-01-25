@@ -94,7 +94,17 @@ namespace ArchiveOnlineDispatcherServices.Models
             {
                 throw new Exception("Регистрация невозможна, регестрируемый сервер не отвечает на запросы");
             }
-            
+
+
+        }
+
+        public static bool deleteServer(uint serverId)
+        {
+            MySqlCommand command = new MySqlCommand();
+            command.CommandText = "DELETE FROM SERVER WHERE SERVER.ID = @serverId";
+            command.Parameters.AddWithValue("@serverId", serverId);
+
+            return QueryExecutor.ExecuteNonQuery(command) > 0;
 
         }
 
@@ -139,7 +149,7 @@ namespace ArchiveOnlineDispatcherServices.Models
 
             foreach (DataRow row in serversDt.Rows)
             {
-                Server newServer = new Server((uint) row[0], (uint)row[2], (Server.ServerType)type, row[1].ToString(), format, (uint)row[5], (uint)row[6]);
+                Server newServer = new Server((uint)row[0], (uint)row[2], (Server.ServerType)type, row[1].ToString(), format, (uint)row[5], (uint)row[6]);
                 serversList.Add(newServer);
             }
 

@@ -285,6 +285,7 @@ public class jFrameMain extends javax.swing.JFrame {
                     if (archiver != null) {
                         archiver.getJettyServer().stop();
                         archiver.getJettyServer().destroy();
+                        archiver.unRegister();
                     }
                     setControlsState(false);
                     logServerStopped();
@@ -305,6 +306,7 @@ public class jFrameMain extends javax.swing.JFrame {
             if (archiver != null) {
                 archiver.getJettyServer().stop();
                 archiver.getJettyServer().destroy();
+                archiver.unRegister();
             }
             archiverThreadPool.shutdownNow();
             setControlsState(false);

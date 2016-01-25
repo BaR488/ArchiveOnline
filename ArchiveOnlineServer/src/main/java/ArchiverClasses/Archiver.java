@@ -119,8 +119,9 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
         return new ArchiverStatus(filesInQueue.size(), runningThreads);
     }
 
+    //Проверяет зарегистрирован ли сервер
     public boolean isRegistred() {
-        return serverId > 0;
+        return serverId >= 0;
     }
 
     public Archiver(Server jettyServer, Class<T> typeArgumentClass, Integer port, String format, Integer threadCount, Integer queueSize, ServerType type) {
@@ -151,6 +152,16 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
             }
         } catch (ParseException ex) {
             Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    //Отмена регистрации архиватора
+    public void unRegister() {
+        if (isRegistred()) {
+            RegisterServerService registerService = new RegisterServerService();
+            registerService.unRegister(serverId);
+            logMessage("Server was succesfully unregistred from main server.");
+            serverId = -1;
         }
     }
 
