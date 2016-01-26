@@ -12,8 +12,11 @@ import com.google.common.reflect.ClassPath;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.PrintStream;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -21,6 +24,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.Timer;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.AgeFileFilter;
+import static org.apache.commons.io.filefilter.TrueFileFilter.TRUE;
+import org.apache.commons.lang3.time.DateUtils;
 
 /**
  *
@@ -34,6 +41,9 @@ public class jFrameMain extends javax.swing.JFrame {
     private static final Color SERVER_STARTED_COLOR = Color.GREEN;
     private static final Color SERVER_STOPPED_COLOR = Color.RED;
 
+    private static final int CLEAR_DELAY = 300000;
+    private static final int UPDATE_DELAY = 5000;
+
     //Стандартные поток вывода
     public PrintStream standartSystemOut = System.out;
     public PrintStream standartSystemErr = System.err;
@@ -43,6 +53,7 @@ public class jFrameMain extends javax.swing.JFrame {
     private ExecutorService jettyThreadPool;
 
     private Timer updateTimer;
+    private Timer deleteFilesTimer;
 
     private static Archiver<?> archiver = null;
 
@@ -53,8 +64,8 @@ public class jFrameMain extends javax.swing.JFrame {
      * Creates new form jFrameMain
      */
     public jFrameMain() {
-
         try {
+
             initComponents();
 
             jLabelInProgress.setVisible(false);
@@ -63,11 +74,11 @@ public class jFrameMain extends javax.swing.JFrame {
             jLabelForQueue.setVisible(false);
 
             //Перенаправляет потоки ввода вывода
-            PrintStream printStream = new PrintStream(new CustomOutputStream(jTextAreaConsole),true, "Windows-1251");
+            PrintStream printStream = new PrintStream(new CustomOutputStream(jTextAreaConsole), true, "Windows-1251");
             System.setOut(printStream);
             System.setErr(printStream);
 
-            updateTimer = new Timer(5000, new ActionListener() {
+            updateTimer = new Timer(UPDATE_DELAY, new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent evt) {
                     if (archiver != null) {
@@ -76,6 +87,26 @@ public class jFrameMain extends javax.swing.JFrame {
                     }
                 }
             });
+
+            deleteFilesTimer = new Timer(CLEAR_DELAY, new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    File outputDir = new File(Archiver.OUTPUTFILE_PATH);
+                    if (outputDir.exists() && outputDir.isDirectory()) {
+                        int filesDeleted = 0;
+                        Date thresholdDate = DateUtils.addHours(new Date(), -1);
+                        Iterator<File> filesToDelete = FileUtils.iterateFiles(outputDir, new AgeFileFilter(thresholdDate), TRUE);
+                        while (filesToDelete.hasNext()) {
+                            File f = filesToDelete.next();
+                            filesDeleted += f.delete() ? 1 : 0;
+                        }
+                        if (filesDeleted > 0) {
+                            logFilesCleanedUp(filesDeleted);
+                        }
+                    }
+                }
+            });
+            deleteFilesTimer.start();
 
             mapArray[0] = new HashMap<>();
             mapArray[1] = new HashMap<>();
@@ -135,6 +166,11 @@ public class jFrameMain extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("ArchiverOnline - сервер");
         setResizable(false);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                formWindowClosing(evt);
+            }
+        });
 
         jTextAreaConsole.setEditable(false);
         jTextAreaConsole.setBackground(new java.awt.Color(240, 240, 240));
@@ -361,8 +397,8 @@ public class jFrameMain extends javax.swing.JFrame {
                 archiver.getJettyServer().stop();
                 archiver.getJettyServer().destroy();
                 archiver.unRegister();
+                archiverThreadPool.shutdownNow();
             }
-            archiverThreadPool.shutdownNow();
             jLabelInProgress.setText("0");
             jLabelInQueue.setText("0");
             setControlsState(false);
@@ -378,6 +414,22 @@ public class jFrameMain extends javax.swing.JFrame {
         });
         jComboBoxFormat.setSelectedIndex(-1);
     }//GEN-LAST:event_jComboBoxTypeActionPerformed
+
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+        updateTimer.stop();
+        deleteFilesTimer.stop();
+        logServerStopping();
+        if (archiver != null) {
+            try {
+                archiver.getJettyServer().stop();
+                archiver.getJettyServer().destroy();
+                archiver.unRegister();
+                archiverThreadPool.shutdownNow();
+            } catch (Exception ex) {
+                Logger.getLogger(jFrameMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }//GEN-LAST:event_formWindowClosing
 
     //Изменяет состояние контролов на форме при запуске сервера
     private void setControlsState(boolean serverIsStarted) {
@@ -418,7 +470,7 @@ public class jFrameMain extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Необходимо выбрать тип сервера", "Ошибка", JOptionPane.ERROR_MESSAGE);
             return false;
         }
-        
+
         if (jComboBoxFormat.getSelectedIndex() < 0) {
             JOptionPane.showMessageDialog(this, "Необходимо выбрать формат сервера", "Ошибка", JOptionPane.ERROR_MESSAGE);
             return false;

@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.eclipse.jetty.server.Server;
 import org.json.simple.parser.ParseException;
@@ -315,6 +316,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                     if (result.getFileNameOutput() != null) {
                         Utils.MailSender.send(result.getEmail(), serviceDownloadAddress + new RFC5987Encoder().encode(result.getFileNameOutput()));
                         logFileSended(result);
+                        FileUtils.deleteQuietly(new File(result.getFileNameInput()));
                     } else {
                         Utils.MailSender.send(result.getEmail(), "Error occured during processing file " + FilenameUtils.getName(result.getFileNameInput()));
                         logFileErrorSended(result);

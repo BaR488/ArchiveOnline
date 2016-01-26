@@ -61,4 +61,8 @@ public class ConsoleLogger {
         logMessage("Error message was sended to " + file.getEmail());
     }
     
+    public static void logFilesCleanedUp(int count){
+        logMessage(count + " old files was cleaned up.");
+    }
+    
 }
