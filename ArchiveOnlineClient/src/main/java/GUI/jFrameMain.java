@@ -9,6 +9,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -28,6 +30,8 @@ public class jFrameMain extends javax.swing.JFrame {
 
     private static String TITLE_DEFAULT = "Архиватор онлайн";
     private static String TITLE_UPLOADING = "Архиватор онлайн [Передача файла]";
+
+    private static String EMAIL_PATTERN = "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$";
 
     private JFileChooser fileChooser;
 
@@ -303,9 +307,6 @@ public class jFrameMain extends javax.swing.JFrame {
     private void jButtonArchiveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonArchiveActionPerformed
         if (checkFields(jComboBoxArchiveMethod)) {
             uploadFile(GetIdleServerService.ARCHIVE_TYPE, jComboBoxArchiveMethod, jTextFieldEmail.getText());
-        } else {
-            JOptionPane.showMessageDialog(this, "Необходимо указать формат архивации",
-                    "Ошибка", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_jButtonArchiveActionPerformed
 
@@ -318,9 +319,6 @@ public class jFrameMain extends javax.swing.JFrame {
                     uploadFile(GetIdleServerService.UNARCHIVE_TYPE, jComboBoxUnArchiveMethod, jTextFieldEmail.getText());
                 }
             }
-        } else {
-            JOptionPane.showMessageDialog(this, "Необходимо указать формат разархивации",
-                    "Ошибка", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_jButtonUnArchiveActionPerformed
 
@@ -356,6 +354,7 @@ public class jFrameMain extends javax.swing.JFrame {
 
         } catch (ParseException ex) {
             Logger.getLogger(jFrameMain.class.getName()).log(Level.SEVERE, null, ex);
+            this.setTitle(TITLE_DEFAULT);
         }
 
     }
@@ -363,7 +362,30 @@ public class jFrameMain extends javax.swing.JFrame {
     //Проверяет все поля перед отправкой файла архиватору
     //true - если все норм, false - иначе
     private boolean checkFields(JComboBox<String> comboBox) {
-        return comboBox.getSelectedIndex() >= 0 && !jTextFieldFilePath.getText().isEmpty();
+        if (jTextFieldEmail.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Необходимо ввести email",
+                    "Ошибка", JOptionPane.ERROR_MESSAGE);
+            return false;
+        } else {
+            Pattern pattern = Pattern.compile(EMAIL_PATTERN);
+            Matcher matcher = pattern.matcher(jTextFieldEmail.getText().trim());
+            if (!matcher.matches()) {
+                JOptionPane.showMessageDialog(this, "Некорректный email",
+                        "Ошибка", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+        }
+        if (jTextFieldFilePath.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Необходимо выбрать путь к файлу",
+                    "Ошибка", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        if (comboBox.getSelectedIndex() < 0) {
+            JOptionPane.showMessageDialog(this, "Необходимо указать формат архивации",
+                    "Ошибка", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
     }
 
     //Загружает элементы списка в комбобокс

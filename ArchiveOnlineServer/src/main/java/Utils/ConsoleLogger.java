@@ -42,7 +42,7 @@ public class ConsoleLogger {
     }
     
     public static void logFileAddedInProgress(FileEntity file){
-        logMessage("File " + FilenameUtils.getName(file.getFileNameInput()) + " from " + file.getEmail() + " is progressing now");
+        logMessage("File " + FilenameUtils.getName(file.getFileNameInput()) + " from " + file.getEmail() + " is processing now");
     }
     
     public static void logFileArchivateCompleted(FileEntity file){
