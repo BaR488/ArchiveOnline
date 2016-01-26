@@ -28,7 +28,7 @@ public class UnSevenZArchiveThread extends ArchiverThread {
     }
 
     @Override
-    public FileEntity call() throws Exception {
+    public FileEntity call() {
         getFile().setFileNameOutput(SevenZArchiver.decompress(getInFileName(), Archiver.OUTPUTFILE_PATH));
         return getFile();
     }

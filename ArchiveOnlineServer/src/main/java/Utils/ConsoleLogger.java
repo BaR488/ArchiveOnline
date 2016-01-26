@@ -53,4 +53,12 @@ public class ConsoleLogger {
         logMessage("File " + FilenameUtils.getName(file.getFileNameOutput()) + " was sended to " + file.getEmail());
     }
     
+    public static void logFileError(FileEntity file){
+        logMessage("Error during processing file " + FilenameUtils.getName(file.getFileNameInput()));
+    }
+    
+    public static void logFileErrorSended(FileEntity file){
+        logMessage("Error message was sended to " + file.getEmail());
+    }
+    
 }

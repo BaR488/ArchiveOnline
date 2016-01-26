@@ -12,6 +12,8 @@ import DispatcherServices.RegisterServerService;
 import static Utils.ConsoleLogger.logFileAddedInProgress;
 import static Utils.ConsoleLogger.logFileAddedInQueue;
 import static Utils.ConsoleLogger.logFileArchivateCompleted;
+import static Utils.ConsoleLogger.logFileError;
+import static Utils.ConsoleLogger.logFileErrorSended;
 import static Utils.ConsoleLogger.logFileSended;
 import static Utils.ConsoleLogger.logMessage;
 import java.io.File;
@@ -24,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.io.FilenameUtils;
 import org.eclipse.jetty.server.Server;
 import org.json.simple.parser.ParseException;
 
@@ -172,7 +175,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
     //Возвращает статус архиватора
     public ArchiverStatus getStatus() {
-        
+
         long filesSizeInQueue = 0;
         for (FileEntity fileEntity : this.filesInQueue) {
             File file = new File(fileEntity.getFileNameInput());
@@ -180,7 +183,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                 filesSizeInQueue += file.length() / 1024;
             }
         }
-        
+
         long filesSizeInProgress = 0;
         for (FileEntity fileEntity : this.filesInProgress) {
             File file = new File(fileEntity.getFileNameInput());
@@ -244,11 +247,11 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
     public void addFile(FileEntity fileEntity) {
 
         //Проверяем если очередь не пуста, или выполняется весь пул занят
-        if (!filesInQueue.isEmpty() || runningThreads.equals(threadCount) ) {
+        if (!filesInQueue.isEmpty() || runningThreads.equals(threadCount)) {
 
             //Добавляем файл в очередь
             filesInQueue.add(fileEntity);
-            
+
             logFileAddedInQueue(fileEntity);
 
         } else {
@@ -261,7 +264,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
                 //Увеличиваем количество запущенных потоков
                 runningThreads++;
-                
+
                 logFileAddedInProgress(fileEntity);
 
             } catch (InstantiationException | IllegalAccessException ex) {
@@ -281,8 +284,12 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
 
                 //Удаляем из списка файлов в обработке
                 filesInProgress.remove(result);
-                
-                logFileArchivateCompleted(result);
+
+                if (result.getFileNameOutput() != null) {
+                    logFileArchivateCompleted(result);
+                } else {
+                    logFileError(result);
+                }
 
                 //Если есть файлы в очереди, запускаем первый в очереди, иначе уменьшаем количество потоков
                 if (!filesInQueue.isEmpty()) {
@@ -294,7 +301,7 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                     pool.submit(createArchiverThread(nextFile));
 
                     filesInProgress.add(nextFile);
-                    
+
                     logFileAddedInProgress(nextFile);
 
                 } else {
@@ -305,12 +312,17 @@ public class Archiver<T extends ArchiverThread> implements ArchiverOnline {
                 try (FileInputStream fileInputStream = new FileInputStream("src\\main\\resources\\config\\config.properties")) {
                     properties.load(fileInputStream);
                     String serviceDownloadAddress = properties.getProperty("archiverDownloadService");
-                    Utils.MailSender.send(result.getEmail(), serviceDownloadAddress + new RFC5987Encoder().encode(result.getFileNameOutput()));
-                    logFileSended(result);
+                    if (result.getFileNameOutput() != null) {
+                        Utils.MailSender.send(result.getEmail(), serviceDownloadAddress + new RFC5987Encoder().encode(result.getFileNameOutput()));
+                        logFileSended(result);
+                    } else {
+                        Utils.MailSender.send(result.getEmail(), "Error occured during processing file " + FilenameUtils.getName(result.getFileNameInput()));
+                        logFileErrorSended(result);
+                    }
                 } catch (Exception e) {
                     System.out.println(e);
                 }
-                
+
             } catch (ExecutionException | InstantiationException | IllegalAccessException ex) {
                 Logger.getLogger(Archiver.class.getName()).log(Level.SEVERE, null, ex);
             }

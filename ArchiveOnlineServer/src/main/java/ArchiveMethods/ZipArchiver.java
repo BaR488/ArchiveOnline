@@ -65,7 +65,6 @@ public class ZipArchiver {
         }
 
         try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(inputfilePath))) {
-
             ZipEntry entry = zipIn.getNextEntry();
             int bufferSize = 1024;
             String filePath = outputFolder + File.separator + entry.getName();
@@ -79,7 +78,7 @@ public class ZipArchiver {
             }
             zipIn.closeEntry();
             return entry.getName();
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             System.err.println(ex);
             return null;
         }
@@ -93,13 +92,13 @@ public class ZipArchiver {
      * @throws IOException
      */
     private static void extractFile(ZipInputStream zipIn, String filePath, int bufferSize) throws IOException {
-        BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath));
-        byte[] bytesIn = new byte[bufferSize];
-        int read = 0;
-        while ((read = zipIn.read(bytesIn)) != -1) {
-            bos.write(bytesIn, 0, read);
+        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath))) {
+            byte[] bytesIn = new byte[bufferSize];
+            int read = 0;
+            while ((read = zipIn.read(bytesIn)) != -1) {
+                bos.write(bytesIn, 0, read);
+            }
         }
-        bos.close();
     }
 
 }

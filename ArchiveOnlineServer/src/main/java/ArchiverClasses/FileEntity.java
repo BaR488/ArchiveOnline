@@ -13,6 +13,7 @@ public class FileEntity {
 
     private String fileNameInput;
     private String fileNameOutput;
+    private String email;
 
     public FileEntity(String fileNameInput, String fileNameOutput, String email) {
         this.fileNameInput = fileNameInput;
@@ -27,8 +28,6 @@ public class FileEntity {
     public void setFileNameOutput(String fileNameOutput) {
         this.fileNameOutput = fileNameOutput;
     }
-
-    private String email;
 
     public String getFileNameInput() {
         return fileNameInput;

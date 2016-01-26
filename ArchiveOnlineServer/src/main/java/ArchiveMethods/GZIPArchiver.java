@@ -8,9 +8,6 @@ package ArchiveMethods;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.io.FileUtils;
@@ -35,10 +32,10 @@ public class GZIPArchiver {
         try (GZIPOutputStream gzos = new GZIPOutputStream(new FileOutputStream(zippedFilePath))) {
             gzos.write(FileUtils.readFileToByteArray(new File(filePath)));
             gzos.finish();
-            return FilenameUtils.getName(fileName);
-        } catch (IOException ex) {
-            Logger.getLogger(GZIPArchiver.class.getName()).log(Level.SEVERE, null, ex);
-            return "";
+            return FilenameUtils.getName(zippedFilePath);
+        } catch (Exception ex) {
+            System.err.println(ex);
+            return null;
         }
 
     }
@@ -63,9 +60,9 @@ public class GZIPArchiver {
                 out.write(buffer, 0, count);
             }
             return FilenameUtils.getName(extractedFilePath);
-        } catch (IOException ex) {
-            Logger.getLogger(GZIPArchiver.class.getName()).log(Level.SEVERE, null, ex);
-            return "";
+        } catch (Exception ex) {
+            System.err.println(ex);
+            return null;
         }
 
     }

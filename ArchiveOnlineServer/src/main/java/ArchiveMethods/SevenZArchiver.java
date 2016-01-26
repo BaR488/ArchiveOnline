@@ -50,9 +50,9 @@ public class SevenZArchiver {
             }
             return FilenameUtils.getName(zippedFilePath);
 
-        } catch (IOException ex) {
-            Logger.getLogger(SevenZArchiver.class.getName()).log(Level.SEVERE, null, ex);
-            return "";
+        } catch (Exception ex) {
+            System.err.println(ex);
+            return null;
         }
     }
 
@@ -75,9 +75,9 @@ public class SevenZArchiver {
                 FileUtils.writeByteArrayToFile(extractedFile, content);
                 return FilenameUtils.getName(extractedFilePath);
             }
-        } catch (IOException ex) {
-            Logger.getLogger(SevenZArchiver.class.getName()).log(Level.SEVERE, null, ex);
-            return "";
+        } catch (Exception ex) {
+            System.err.println(ex);
+            return null;
         }
 
     }

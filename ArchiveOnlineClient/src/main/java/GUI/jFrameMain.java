@@ -318,6 +318,8 @@ public class jFrameMain extends javax.swing.JFrame {
                 if (showConfirmDialog == 0) {
                     uploadFile(GetIdleServerService.UNARCHIVE_TYPE, jComboBoxUnArchiveMethod, jTextFieldEmail.getText());
                 }
+            } else {
+                uploadFile(GetIdleServerService.UNARCHIVE_TYPE, jComboBoxUnArchiveMethod, jTextFieldEmail.getText());
             }
         }
     }//GEN-LAST:event_jButtonUnArchiveActionPerformed
